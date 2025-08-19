@@ -1,0 +1,14 @@
+package model;
+
+public enum GameState {
+    PLAYING,
+    TERMINAL_OPEN,
+    PAUSED,
+    GAMEOVER,
+    HOMESCREEN,
+    PROFILE_SELECTION,
+    IN_ELEVATOR, 
+    VICTORY_SCREEN,
+    STATS_SCREEN,
+    LEADERBOARD_SCREEN
+}

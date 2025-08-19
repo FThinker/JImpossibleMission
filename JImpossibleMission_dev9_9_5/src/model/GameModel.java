@@ -13,19 +13,16 @@ public class GameModel extends Observable {
     private Elevator elevator;
     private Level level;
     private GameState gameState;
-    private UserProfile activeProfile; // NUOVO: Il profilo attualmente caricato
+    private UserProfile activeProfile;
     
-    // NUOVO: Variabili per il pop-up a nuvoletta
+    // Variabili per il pop-up a nuvoletta
     private String popupMessage = null; // Il testo del messaggio da mostrare
     private float popupDisplayTime = 0; // Tempo rimanente di visualizzazione
     private final float POPUP_DURATION = 2.0f; // Durata del pop-up in secondi
     private FurnitureTile currentSearchingFurniture = null; // Riferimento al mobile in cui si sta cercando
 
- // NUOVO: Riferimento alla sessione di gioco corrente
+    // Riferimento alla sessione di gioco corrente
     private GameSession currentGameSession; 
-    
-    private long freezeStartTime = 0;
-    private long freezeDuration = 0;
 
     private long lastScore = 0;
     
@@ -180,20 +177,12 @@ public class GameModel extends Observable {
     	}
     }
     
-    // Metodo per "congelare" i nemici (da implementare logicamente quando avrai i nemici)
     public void freezeEnemies(long durationSec) {
-    	// Qui dovrai implementare la logica per congelare i nemici.
-    	// Ad esempio, potresti avere un elenco di oggetti Enemy e impostare una loro variabile 'frozen' a true
-    	// e avviare un timer per scongelarli dopo 'durationSeconds'.
-//    	System.out.println("Nemici congelati per " + durationSec + " secondi!");
-    	this.freezeStartTime = System.currentTimeMillis();
-        this.freezeDuration = durationSec * 1000;
-        setChanged();
-        notifyObservers();
-    }
-    
-    public boolean isEnemiesFrozen(long currentTime) {
-        return (currentTime - freezeStartTime) < freezeDuration;
+        if (this.level != null) {
+            this.level.freezeEnemies(durationSec);
+            setChanged();
+            notifyObservers();
+        }
     }
     
  // NUOVI GETTER E SETTER per la logica dei pop-up

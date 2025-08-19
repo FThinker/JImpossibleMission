@@ -398,14 +398,12 @@ public class GameController implements Runnable {
 				}
 			}
 
-			// Verifica se gli effetti di congelamento sono attivi
-			if (!gameModel.isEnemiesFrozen(System.currentTimeMillis())) {
-				// NUOVO: Aggiorna lo stato di tutti i nemici
-				for (Enemy enemy : gameModel.getEnemies()) {
-					enemy.update(System.currentTimeMillis(), gameModel.getLevel(), gameModel.getPlayer());
-					// System.out.println("Enemy ID " + enemy.toString() + " | (x,y): " +
-					// enemy.getX() + " , " + enemy.getY());
-				}
+			// Verifica se gli effetti di congelamento sono attivi sul livello corrente
+			if (gameModel.getLevel() != null && !gameModel.getLevel().areEnemiesFrozen()) {
+			    // Aggiorna lo stato di tutti i nemici
+			    for (Enemy enemy : gameModel.getEnemies()) {
+			        enemy.update(System.currentTimeMillis(), gameModel.getLevel(), gameModel.getPlayer());
+			    }
 			}
 
 			// Handle player movement only if not interacting with furnitures

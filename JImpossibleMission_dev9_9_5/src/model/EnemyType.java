@@ -3,8 +3,7 @@ package model;
 
 public enum EnemyType {
     STANDING_ROBOT(14, 21, 9, 11), 
-    MOVING_ROBOT(14, 21, 9, 11), // Larghezza, Altezza, hitboxOffsetX, hitboxOffsetY
-	WALTZING_ROBOT(14, 21, 9, 11);
+    MOVING_ROBOT(14, 21, 9, 11); // Larghezza, Altezza, hitboxOffsetX, hitboxOffsetY
 
     private final int width;
     private final int height;

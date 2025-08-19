@@ -8,15 +8,18 @@ import java.util.Random;
 
 import static model.TileTypes.*;
 
-public class Level implements Serializable{
+public class Level implements Serializable {
 	private static final long serialVersionUID = 1L;
-	
+
 	private Tile[][] levelData; // Matrice 2D per i dati del livello
 	private Point playerSpawn;
 	private List<LiftTile> liftList = new ArrayList<>();
 	private List<PcTile> pcList = new ArrayList<>();
 	private List<FurnitureTile> furnitureList = new ArrayList<>();
 	private List<Enemy> enemies = new ArrayList<>();
+
+	private long freezeStartTime = 0;
+	private long freezeDuration = 0;
 
 	public Level(Tile[][] levelData, Point playerSpawn, List<Enemy> enemies) {
 		this.levelData = levelData;
@@ -79,4 +82,20 @@ public class Level implements Serializable{
 	public List<Enemy> getEnemies() {
 		return enemies;
 	}
+	
+	/**
+     * NUOVO METODO: Attiva il congelamento per questo specifico livello.
+     */
+    public void freezeEnemies(long durationSec) {
+        this.freezeStartTime = System.currentTimeMillis();
+        this.freezeDuration = durationSec * 1000; // Converti in millisecondi
+    }
+    
+    /**
+     * NUOVO METODO: Controlla se i nemici in questo livello sono attualmente congelati.
+     */
+    public boolean areEnemiesFrozen() {
+        if (freezeStartTime == 0) return false; // Mai stato congelato
+        return (System.currentTimeMillis() - freezeStartTime) < freezeDuration;
+    }
 }

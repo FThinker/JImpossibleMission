@@ -1,6 +1,7 @@
 package view;
 
 import model.Enemy;
+import model.EnemyType;
 import model.GameModel;
 import model.Player;
 import model.Level;
@@ -8,6 +9,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Color;
 import java.util.List;
+
+import controller.AssetLoader;
 
 public class PlayingView {
 
@@ -52,9 +55,17 @@ public class PlayingView {
         // Disegniamo il player.
         playerRenderer.draw(g2d, gameModel.getPlayer(), gameModel.getGameState());
         
-        // Disegniamo i nemici del livello corrente.
+     // Disegniamo i nemici del livello corrente.
         for (Enemy enemy : gameModel.getEnemies()) {
-            enemyRenderer.draw(g2d, enemy);
+            // 1. Ottieni il tipo di nemico
+            EnemyType type = enemy.getEnemyType();
+            // 2. Chiedi all'AssetLoader il pacchetto di animazioni corretto
+            EnemyAnimationSet animSet = AssetLoader.getInstance().getAnimationsFor(type);
+            
+            // 3. Se il pacchetto esiste, disegna il nemico usandolo
+            if (animSet != null) {
+                enemyRenderer.draw(g2d, enemy, animSet);
+            }
         }
     }
 }

@@ -5,7 +5,7 @@ public abstract class GameConstants {
 	public final static int FPS_SET = 120;
 	
 	public final static int TILES_DEFAULT_SIZE = 32;
-	public final static float SCALE = 2.25f;
+	public final static float SCALE = 2f;
 	public final static int TILES_IN_WIDTH = 19;
 	public final static int TILES_IN_HEIGHT = 14;
 	public final static int LOGIC_WIDTH = TILES_DEFAULT_SIZE * TILES_IN_WIDTH;

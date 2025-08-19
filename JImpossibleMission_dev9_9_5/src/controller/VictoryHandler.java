@@ -10,24 +10,45 @@ import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 
 public class VictoryHandler {
-    private GameModel gameModel;
-    private InputHandler inputHandler;
-    private Rectangle menuButtonBounds = new Rectangle((int)(245 * SCALE), (int)(225 * SCALE), (int)(150 * SCALE), (int)(25 * SCALE));
-    private boolean menuHover = false;
+	private GameModel gameModel;
+	private InputHandler inputHandler;
+	private Rectangle menuButtonBounds = new Rectangle((int) (245 * SCALE), (int) (225 * SCALE), (int) (150 * SCALE),
+			(int) (25 * SCALE));
+	private boolean menuHover = false;
 
-    public VictoryHandler(GameModel gameModel, InputHandler inputHandler) {
-        this.gameModel = gameModel;
-        this.inputHandler = inputHandler;
-    }
+	private boolean wasAnyButtonHovered = false;
 
-    public void handleInput() {
-        menuHover = menuButtonBounds.contains(inputHandler.getMouseX(), inputHandler.getMouseY());
-        if (inputHandler.isMouseButtonPressed(MouseEvent.BUTTON1) && menuHover) {
-            gameModel.setGameState(GameState.HOMESCREEN);
-        }
-        inputHandler.resetMouse();
-    }
+	public VictoryHandler(GameModel gameModel, InputHandler inputHandler) {
+		this.gameModel = gameModel;
+		this.inputHandler = inputHandler;
+	}
 
-    public Rectangle getMenuButtonBounds() { return menuButtonBounds; }
-    public boolean isMenuHover() { return menuHover; }
+	public void handleInput() {
+		menuHover = menuButtonBounds.contains(inputHandler.getMouseX(), inputHandler.getMouseY());
+
+		boolean isCurrentlyHovered = menuHover;
+
+		// Riproduci il suono solo se ORA siamo in hover, ma PRIMA non lo eravamo
+		if (isCurrentlyHovered && !wasAnyButtonHovered) {
+			AudioManager.getInstance().play("click_2");
+		}
+
+		// Aggiorna la variabile di stato per il prossimo frame
+		wasAnyButtonHovered = isCurrentlyHovered;
+
+		if (inputHandler.isMouseButtonPressed(MouseEvent.BUTTON1) && menuHover) {
+			AudioManager.getInstance().play("click");
+			gameModel.setGameState(GameState.HOMESCREEN);
+			AudioManager.getInstance().loopMenuMusic("menu_theme");
+		}
+		inputHandler.resetMouse();
+	}
+
+	public Rectangle getMenuButtonBounds() {
+		return menuButtonBounds;
+	}
+
+	public boolean isMenuHover() {
+		return menuHover;
+	}
 }

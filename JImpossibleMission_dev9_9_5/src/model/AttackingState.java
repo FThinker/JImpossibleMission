@@ -1,10 +1,13 @@
 package model;
 
+import controller.AudioManager;
+
 public class AttackingState implements EnemyStateHandler {
 
     @Override
     public void enter(Enemy enemy) {
         enemy.setState(EnemyState.ATTACKING);
+        AudioManager.getInstance().loop("energy_beam");
     }
 
     @Override
@@ -46,5 +49,7 @@ public class AttackingState implements EnemyStateHandler {
 
 
     @Override
-    public void exit(Enemy enemy) {}
+    public void exit(Enemy enemy) {
+    	AudioManager.getInstance().stop("energy_beam");
+    }
 }

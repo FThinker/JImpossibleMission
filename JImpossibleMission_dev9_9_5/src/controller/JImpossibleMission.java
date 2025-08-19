@@ -37,7 +37,8 @@ public class JImpossibleMission {
         SwingUtilities.invokeLater(() -> {
         	
         	// === 1. CREAZIONE DEL MODELLO DATI ===
-//            AssetLoader.getInstance().loadAvatars(); // Carica gli asset prima di tutto
+            AssetLoader.getInstance();
+            AudioManager.getInstance();
             Elevator elevator = new Elevator(5, 1);
             Player player = new Player(new Point((int)(LOGIC_WIDTH / 2.24), (int)(LOGIC_HEIGHT / 4.1)));
             GameSession session = new GameSession(); // Crea la sessione

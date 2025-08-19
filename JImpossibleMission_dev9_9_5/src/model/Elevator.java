@@ -2,6 +2,8 @@ package model;
 
 import java.util.Observable;
 
+import controller.AudioManager;
+
 @SuppressWarnings("deprecation")
 public class Elevator extends Observable {
 
@@ -39,6 +41,7 @@ public class Elevator extends Observable {
         if (currentFloor > 1 && !isMoving) {
             currentFloor--;
             targetY = floorYPositions[currentFloor - 1];
+            AudioManager.getInstance().loop("elevator_moving");
             isMoving = true;
             
             setChanged();
@@ -50,6 +53,7 @@ public class Elevator extends Observable {
         if (currentFloor < totalFloors - 1 && !isMoving) {
             currentFloor++;
             targetY = floorYPositions[currentFloor - 1];
+            AudioManager.getInstance().loop("elevator_moving");
             isMoving = true;
             
             setChanged();
@@ -63,6 +67,7 @@ public class Elevator extends Observable {
             if (Math.abs(yPosition - targetY) < movementSpeed) {
                 yPosition = targetY;
                 isMoving = false;
+                AudioManager.getInstance().stop("elevator_moving");
             } else if (yPosition < targetY) {
                 yPosition += movementSpeed;
             } else if (yPosition > targetY) {

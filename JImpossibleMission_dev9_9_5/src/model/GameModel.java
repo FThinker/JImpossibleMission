@@ -7,6 +7,8 @@ import java.awt.Point;
 import java.util.List;
 import java.util.Observable; // Sarà osservato dalla View
 
+import controller.AudioManager;
+
 @SuppressWarnings("deprecation")
 public class GameModel extends Observable {
     private Player player;
@@ -32,13 +34,14 @@ public class GameModel extends Observable {
     
     public GameModel(Player player, Elevator elevator, GameSession session) {
         this.player = player;
-        this.level = null; // All'inizio non siamo in nessun livello
+        this.level = null;
         this.elevator = elevator;
-        this.gameState = GameState.PROFILE_SELECTION; // Nuovo stato iniziale
+        this.gameState = GameState.PROFILE_SELECTION; // Stato iniziale
         this.activeProfile = null;
+        
+        AudioManager.getInstance().loopMenuMusic("menu_theme");
     }
     
-    // NUOVI METODI per gestire il profilo
     public void setActiveProfile(UserProfile profile) {
         this.activeProfile = profile;
         setChanged();
@@ -49,29 +52,28 @@ public class GameModel extends Observable {
         return this.activeProfile;
     }
 
-    // Ora la logica di creazione della partita non è più nel GameModel,
-    // ma verrà gestita da un Handler che interagirà con il profilo.
-    // Per esempio, quando si clicca "Nuova Partita":
     public void startNewGame() {
         if (activeProfile != null) {
-            GameSession newSession = new GameSession(); // Crea una nuova sessione
-            activeProfile.startGame(newSession); // Associa la sessione al profilo
-            // Ora il GameModel deve "caricare" questa sessione
-            this.currentGameSession = newSession; // Assumendo che GameModel abbia un campo `currentGameSession`
+        	AudioManager.getInstance().stopMenuMusic();
+        	
+            GameSession newSession = new GameSession();
+            activeProfile.startGame(newSession);
+            this.currentGameSession = newSession;
             setGameState(GameState.IN_ELEVATOR); // Si parte dall'ascensore
         }
     }
     
-    // NUOVO METODO: Per entrare in una stanza dall'ascensore
+    // Per entrare in una stanza dall'ascensore
     public void enterRoom(int lvlNumber) {
     	if (gameState == GameState.IN_ELEVATOR) {
-            // 1. Chiedi alla sessione di darti il livello
             this.level = currentGameSession.getLevel(lvlNumber);
             
             if (this.level != null) {
                 player.teleport(level.getPlayerSpawn().x, level.getPlayerSpawn().y);
                 player.setInitialSpawn(new Point(level.getPlayerSpawn().x, level.getPlayerSpawn().y));
                 setGameState(GameState.PLAYING);
+                AudioManager.getInstance().stopAllSounds();
+                AudioManager.getInstance().play("woosh");
                 this.currentGameSession.updatePlayerLocation(GameState.PLAYING, this.level);
             } else {
                 System.err.println("Errore: Impossibile caricare il livello " + lvlNumber);
@@ -79,17 +81,13 @@ public class GameModel extends Observable {
         }
     }
     
- // MODIFICA: exitRoom non deve più "distruggere" il livello
     public void exitRoom(Directions direction) {
         if (gameState == GameState.PLAYING) {
-            // 1. NON impostare più this.level = null!
-            // L'oggetto Level rimane memorizzato nella GameSession.
-            
-            // ... il resto del codice per teletrasportare il player non cambia ...
-        	
         	this.currentGameSession.updatePlayerLocation(GameState.IN_ELEVATOR, null);
         	
         	setGameState(GameState.IN_ELEVATOR);
+        	AudioManager.getInstance().stopAllSounds();
+        	AudioManager.getInstance().play("woosh");
         	
             if(direction == Directions.RIGHT)
             	player.teleport(1, (int)(LOGIC_HEIGHT / 4.1));
@@ -105,6 +103,7 @@ public class GameModel extends Observable {
     
     public void addPuzzlePiece() {
         currentGameSession.addPuzzlePiece();
+        AudioManager.getInstance().play("piece_found");
         setChanged();
         notifyObservers();
     }
@@ -117,6 +116,8 @@ public class GameModel extends Observable {
         currentGameSession.loseLife();
         resetAllEnemiesPosition();
         resetAllLiftsPosition();
+        AudioManager.getInstance().stopAllSounds();
+        AudioManager.getInstance().play("death");
         player.teleport(level.getPlayerSpawn().x, level.getPlayerSpawn().y);
         setChanged();
         notifyObservers();
@@ -180,6 +181,7 @@ public class GameModel extends Observable {
     public void freezeEnemies(long durationSec) {
         if (this.level != null) {
             this.level.freezeEnemies(durationSec);
+            AudioManager.getInstance().play("freeze");
             setChanged();
             notifyObservers();
         }

@@ -18,17 +18,20 @@ public class TerminalHandler {
     public void handleTerminalInput() {
         if (inputHandler.isKeyPressed(KeyEvent.VK_1)) {
             System.out.println("Opzione 1 selezionata: Resetting Lifts");
+            AudioManager.getInstance().play("keystroke");
             gameModel.resetAllLiftsPosition();
             inputHandler.resetKeys(); // Resetta i tasti per evitare input multipli
             gameModel.setGameState(GameState.PLAYING); // Torna al gioco normale
         } else if (inputHandler.isKeyPressed(KeyEvent.VK_2)) {
             System.out.println("Opzione 2 selezionata: Freezing Enemies");
+            AudioManager.getInstance().play("keystroke");
             gameModel.freezeEnemies(15); // Congela per 15 secondi
             inputHandler.resetKeys();
             gameModel.setGameState(GameState.PLAYING); // Torna al gioco normale
         } else if (inputHandler.isKeyPressed(KeyEvent.VK_ESCAPE) || inputHandler.isKeyPressed(KeyEvent.VK_Q) || inputHandler.isKeyPressed(KeyEvent.VK_ENTER)) {
             // Usa ESC o INVIO per fare il "Log Off"
             System.out.println("Log Off dal terminale.");
+            AudioManager.getInstance().play("keystroke");
             inputHandler.resetKeys();
             gameModel.setGameState(GameState.PLAYING); // Torna al gioco normale
         }

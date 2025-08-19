@@ -17,6 +17,8 @@ public class GameoverHandler {
     private Rectangle menuButtonBounds = new Rectangle((int)(245 * SCALE), (int)(225 * SCALE), (int)(150 * SCALE), (int)(25 * SCALE));
     private boolean menuHover = false;
     
+    private boolean wasAnyButtonHovered = false;
+    
     public GameoverHandler(GameModel gameModel, InputHandler inputHandler) {
         this.gameModel = gameModel;
         this.inputHandler = inputHandler;
@@ -27,9 +29,21 @@ public class GameoverHandler {
         int my = inputHandler.getMouseY();
         menuHover = menuButtonBounds.contains(mx, my);
         
+        boolean isCurrentlyHovered = menuHover;
+		
+		// Riproduci il suono solo se ORA siamo in hover, ma PRIMA non lo eravamo
+        if (isCurrentlyHovered && !wasAnyButtonHovered) {
+            AudioManager.getInstance().play("click_2");
+        }
+        
+        // Aggiorna la variabile di stato per il prossimo frame
+        wasAnyButtonHovered = isCurrentlyHovered;
+        
         if (inputHandler.isMouseButtonPressed(MouseEvent.BUTTON1)) {
             if (menuHover) {
+            	AudioManager.getInstance().play("click");
                 gameModel.setGameState(GameState.HOMESCREEN);
+                AudioManager.getInstance().loopMenuMusic("menu_theme");
             }
             inputHandler.resetMouse();
         }

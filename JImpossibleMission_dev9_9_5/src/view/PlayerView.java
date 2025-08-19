@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import controller.AssetLoader;
+import controller.AudioManager;
 import model.GameState;
 import model.Player; // La PlayerView ha bisogno di PlayerModel per la posizione
 import model.PlayerState; // Importa il PlayerState
@@ -26,11 +27,7 @@ public class PlayerView { // NON estende JPanel e NON implementa Observer
 	private final int spriteHeight = TILES_DEFAULT_SIZE;
 	
 
-	private int aniTick, aniIndex; // Contatori per l'animazione
-//	private int runningAniSpeed = 7; // Velocità dell'animazione (più basso = più veloce)
-//	private int idleAniSpeed = 20; // Velocità animazione idle (può essere diversa)
-//	private int searchingAniSpeed = 20;
-//	private int jumpingAniSpeed = 3;
+	private int aniIndex; // Contatori per l'animazione
 	
 	private int runningAniSpeed = 30; // Velocità dell'animazione (più basso = più veloce)
 	private int idleAniSpeed = 60; // Velocità animazione idle (può essere diversa)
@@ -43,6 +40,9 @@ public class PlayerView { // NON estende JPanel e NON implementa Observer
 	private final int totalSearchingFrames = 1;
 	
 	private long lastFrameTime = 0;
+	
+	private final int STEP_FRAME_1 = 3;
+    private final int STEP_FRAME_2 = 10;
 
 	public PlayerView() {
 		this.runningAtlas = AssetLoader.getInstance().getImage("runningAtlas");
@@ -137,7 +137,7 @@ public class PlayerView { // NON estende JPanel e NON implementa Observer
         
         // 3. Aggiorna l'animazione SOLO se il gioco è in uno stato attivo
         if (gameState == GameState.PLAYING || gameState == GameState.IN_ELEVATOR) {
-            updateAnimationTick(currentAniSpeed, currentTotalFrames);
+            updateAnimationTick(currentAniSpeed, currentTotalFrames, player.getCurrentState());
         }
 
         // Disegna lo sprite corrente dall'animazione selezionata
@@ -195,12 +195,21 @@ public class PlayerView { // NON estende JPanel e NON implementa Observer
 //        }
 //    }
 	
-	private void updateAnimationTick(int frameDurationMillis, int totalFrames) {
+	private void updateAnimationTick(int frameDurationMillis, int totalFrames, PlayerState currentState) {
 	    long now = System.currentTimeMillis();
 
 	    if (now - lastFrameTime >= frameDurationMillis) {
 	        lastFrameTime = now;
+	        int oldAniIndex = aniIndex; // Memorizziamo il frame precedente
 	        aniIndex = (aniIndex + 1) % totalFrames;
+	        
+	        // Riproduci il suono solo se il frame è cambiato e siamo nello stato di corsa
+	        if (aniIndex != oldAniIndex && currentState == PlayerState.RUNNING) {
+	            // Controlla se il nuovo frame è uno di quelli che triggerano il passo
+	            if (aniIndex == STEP_FRAME_1 || aniIndex == STEP_FRAME_2) {
+	                AudioManager.getInstance().play("step_2");
+	            }
+	        }
 	    }
 	}
 }

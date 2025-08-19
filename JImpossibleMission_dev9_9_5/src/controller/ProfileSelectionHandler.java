@@ -29,7 +29,9 @@ public class ProfileSelectionHandler extends Observable {
     // NUOVO: Lista per le aree cliccabili dei cestini
     private List<Rectangle> deleteButtonBounds = new java.util.ArrayList<>();
     
-    private boolean needsRefresh = true; // NUOVO: Flag per gestire l'aggiornamento
+    private boolean needsRefresh = true;
+    
+    private boolean wasAnyButtonHovered = false;
     
     public ProfileSelectionHandler(GameModel gameModel, InputHandler inputHandler) {
         this.gameModel = gameModel;
@@ -63,19 +65,29 @@ public class ProfileSelectionHandler extends Observable {
         }
         
         createHover = createButtonBounds.contains(inputHandler.getMouseX(), inputHandler.getMouseY());
+        
+        boolean isCurrentlyHovered = createHover;
+		
+		// Riproduci il suono solo se ORA siamo in hover, ma PRIMA non lo eravamo
+        if (isCurrentlyHovered && !wasAnyButtonHovered) {
+            AudioManager.getInstance().play("click_2");
+        }
+        
+        // Aggiorna la variabile di stato per il prossimo frame
+        wasAnyButtonHovered = isCurrentlyHovered;
 
         if (inputHandler.consumeKeyPress(KeyEvent.VK_DOWN)) {
             if (!profiles.isEmpty()) {
+            	AudioManager.getInstance().play("click");
                 selectedIndex = (selectedIndex + 1) % profiles.size();
-                // 3. Notifica gli observer che lo stato è cambiato!
                 setChanged();
                 notifyObservers();
             }
         }
         if (inputHandler.consumeKeyPress(KeyEvent.VK_UP)) {
             if (!profiles.isEmpty()) {
+            	AudioManager.getInstance().play("click");
                 selectedIndex = (selectedIndex - 1 + profiles.size()) % profiles.size();
-                // 3. Notifica gli observer che lo stato è cambiato!
                 setChanged();
                 notifyObservers();
             }
@@ -83,6 +95,7 @@ public class ProfileSelectionHandler extends Observable {
 
         // Gestione conferma con Invio
         if (inputHandler.consumeKeyPress(KeyEvent.VK_ENTER)) {
+        	AudioManager.getInstance().play("confirm");
             if (!profiles.isEmpty()) {
                 loadSelectedProfile();
             }
@@ -91,6 +104,7 @@ public class ProfileSelectionHandler extends Observable {
         // Gestione click del mouse per il bottone "Crea"
         if (inputHandler.isMouseButtonPressed(MouseEvent.BUTTON1)) {
         	if (createHover) {
+        		AudioManager.getInstance().play("click");
                 createNewProfile();
             } else {
                 // NUOVO: Controlla se è stato cliccato un cestino
@@ -98,9 +112,9 @@ public class ProfileSelectionHandler extends Observable {
                 int my = inputHandler.getMouseY();
                 for (int i = 0; i < deleteButtonBounds.size(); i++) {
                     if (deleteButtonBounds.get(i).contains(mx, my)) {
-                        // Trovato il bottone cliccato!
+                    	AudioManager.getInstance().play("click");
                         deleteProfile(i);
-                        break; // Esce dal ciclo una volta trovato
+                        break;
                     }
                 }
             }

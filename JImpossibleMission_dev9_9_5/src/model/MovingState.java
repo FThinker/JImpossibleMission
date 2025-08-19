@@ -3,11 +3,14 @@ package model;
 
 import static model.GameConstants.*;
 
+import controller.AudioManager;
+
 public class MovingState implements EnemyStateHandler {
 
 	@Override
 	public void enter(Enemy enemy) {
 		enemy.setState(EnemyState.MOVING); // Dovrai aggiungere WALKING a EnemyState
+		AudioManager.getInstance().loop("robot_bleep");
 	}
 
 	@Override
@@ -31,7 +34,6 @@ public class MovingState implements EnemyStateHandler {
 		// --- 2. Azione dello stato ---
 
 		// Se nessuna transizione è avvenuta, il nemico continua a muoversi.
-		// (Dovrai implementare questo metodo in Enemy o nelle sue sottoclassi)
 		enemy.move();
 	}
 
@@ -81,6 +83,6 @@ public class MovingState implements EnemyStateHandler {
 
 	@Override
 	public void exit(Enemy enemy) {
-		// Potresti voler fermare il movimento qui se necessario
+		AudioManager.getInstance().stop("robot_bleep");
 	}
 }

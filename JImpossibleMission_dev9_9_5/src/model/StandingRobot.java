@@ -1,11 +1,14 @@
-// StandingRobot.java (Nuovo file nel package model)
 package model;
 
 import java.awt.Point;
 import java.awt.geom.Rectangle2D;
-
 import static model.GameConstants.*;
 
+/**
+ * Represents a stationary enemy robot that does not patrol.
+ * It follows a fixed pattern of attacking and turning, managed by its
+ * {@link StandingRobotBehavior}.
+ */
 @SuppressWarnings("deprecation")
 public class StandingRobot extends Enemy {
 	private static final long serialVersionUID = 1L;
@@ -15,7 +18,7 @@ public class StandingRobot extends Enemy {
     private int hbWidth = EnemyType.STANDING_ROBOT.getWidth() * 2;
     private int hbHeight = EnemyType.STANDING_ROBOT.getHeight() * 2;
     
-    private Rectangle2D.Float attackBox; //48x9, x=21, y=11
+    private Rectangle2D.Float attackBox;
 	private Point initialSpawn;
 
     public StandingRobot(Point initialSpawn, int width, int height) {
@@ -44,15 +47,14 @@ public class StandingRobot extends Enemy {
 
     @Override
     protected void initHitbox() {
-        // Usa le dimensioni del tipo di nemico per l'hitbox
         hitbox = new Rectangle2D.Float(x + hbOffsetX - SCALE, y + hbOffsetY - SCALE, hbWidth, hbHeight);
     }
     
     private void initAttackBox() {
-        // Usa le dimensioni del tipo di nemico per l'hitbox
         attackBox = new Rectangle2D.Float(x + 21*2, y + 11*2, 48*2, 9*2);
     }
     
+    @Override
     protected void updateHitbox() {
     	hitbox.x = this.x + hbOffsetX;
         hitbox.y = this.y + hbOffsetY;
@@ -66,7 +68,6 @@ public class StandingRobot extends Enemy {
     		attackBox.y = this.hitbox.y;
     		attackBox.width = 48*2;
     		attackBox.height = 9*2;
-    		
     		attackBox.setRect(attackBox.x, attackBox.y, attackBox.width, attackBox.height);
     	}
     	else {
@@ -74,11 +75,9 @@ public class StandingRobot extends Enemy {
     		attackBox.y = this.hitbox.y;
     		attackBox.width = -48*2;
     		attackBox.height = 9*2;
-    		
 			attackBox.setRect(attackBox.x + attackBox.width, attackBox.y, -attackBox.width, attackBox.height);
     	}
     }
-    
     
     @Override
     public void setState(EnemyState newState) {
@@ -94,11 +93,17 @@ public class StandingRobot extends Enemy {
         notifyObservers();
     }
     
+    @Override
     protected void turn() {
         isFacingRight = !isFacingRight;
         direction = isFacingRight ? Directions.RIGHT : Directions.LEFT;
         updateAttackBox();
     }
+    
+    @Override
+    public void move() {
+        // This robot does not move.
+	}
     
     @Override
     public long getDurationForState(EnemyState state) {
@@ -110,13 +115,8 @@ public class StandingRobot extends Enemy {
     	return behavior.getStateStartTime();
     }
 
-    
+    @Override
     public Rectangle2D.Float getAttackBox() {
 		return attackBox;
-    	
     }
-
-	@Override
-	public void move() {
-	}
 }

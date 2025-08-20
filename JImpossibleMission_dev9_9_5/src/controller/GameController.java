@@ -1,7 +1,5 @@
 package controller;
 
-import javax.swing.Timer;
-
 import model.Player;
 import view.MainGamePanel;
 import model.Directions;
@@ -14,29 +12,32 @@ import model.GameState;
 import model.Level;
 import model.LiftTile;
 import model.PcTile;
-
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
-
-import javax.swing.JComponent; // Per attaccare i listener alla View
-
-import model.PlayerState; // Importa il PlayerState
+import javax.swing.JComponent;
+import model.PlayerState;
 import model.Tile;
 import model.UserProfile;
 
 import static model.GameConstants.*;
 import static model.EnemyState.*;
 
+/**
+ * The main controller of the game.
+ * It contains the central game loop, processes user input, updates the game model,
+ * and coordinates interactions between different game components based on the current game state.
+ *
+ * @see GameModel
+ * @see MainGamePanel
+ * @see GameState
+ */
 @SuppressWarnings("deprecation")
 public class GameController implements Runnable {
 	private GameModel gameModel;
 	private InputHandler inputHandler;
-	private TerminalHandler terminalHandler; // Aggiungi TerminalHandler
-	private MainGamePanel mainGamePanel; // Riferimento al pannello principale per attach KeyListener
+	private TerminalHandler terminalHandler;
+	private MainGamePanel mainGamePanel;
 	private PopupHandler popupHandler;
 	private PausedHandler pausedHandler;
 	private GameoverHandler gameoverHandler;
@@ -48,18 +49,32 @@ public class GameController implements Runnable {
 
 	private Elevator elevator;
 
-	private static final double XP_PER_SCORE_POINT = 0.5; // 10% del punteggio diventa XP
+	private static final double XP_PER_SCORE_POINT = 0.5;
 	private static final int WIN_BONUS_XP = 1000;
-	
-	private boolean isStepSoundPlaying = false; 
 
-	// COSTRUTTORE COMPLETAMENTE RIVISTO
+    /**
+     * Constructs the main game controller and wires up all dependencies.
+     * This constructor initializes all handlers, sets up observers between the model and view,
+     * attaches input listeners to the main panel, and starts the game loop.
+     *
+     * @param gameModel              The main data model of the game.
+     * @param mainGamePanel          The main view component (JPanel) for rendering.
+     * @param inputHandler           The handler for keyboard and mouse inputs.
+     * @param terminalHandler        The handler for terminal screen logic.
+     * @param pausedHandler          The handler for the paused menu.
+     * @param gameoverHandler        The handler for the game over screen.
+     * @param profileSelectionHandler The handler for the profile selection screen.
+     * @param mainMenuHandler        The handler for the main menu screen.
+     * @param statsHandler           The handler for the statistics screen.
+     * @param popupHandler           The handler for in-game popups.
+     * @param victoryHandler         The handler for the victory screen.
+     * @param leaderboardHandler     The handler for the leaderboard screen.
+     */
 	public GameController(GameModel gameModel, MainGamePanel mainGamePanel, InputHandler inputHandler,
 			TerminalHandler terminalHandler, PausedHandler pausedHandler, GameoverHandler gameoverHandler,
 			ProfileSelectionHandler profileSelectionHandler, MainMenuHandler mainMenuHandler, StatsHandler statsHandler,
 			PopupHandler popupHandler, VictoryHandler victoryHandler, LeaderboardHandler leaderboardHandler) {
 
-		// Assegna tutte le dipendenze ricevute
 		this.gameModel = gameModel;
 		this.mainGamePanel = mainGamePanel;
 		this.inputHandler = inputHandler;
@@ -75,13 +90,13 @@ public class GameController implements Runnable {
 
 		this.elevator = gameModel.getElevator();
 
-		// Ora che tutti i pezzi sono al loro posto, colleghiamo gli observer
+		// Connect observers to their subjects
 		this.gameModel.addObserver(this.mainGamePanel);
 		this.profileSelectionHandler.addObserver(this.mainGamePanel);
 		gameModel.getPlayer().addObserver(this.mainGamePanel);
 		this.elevator.addObserver(this.mainGamePanel);
 
-		// Collega i listener di input
+		// Attach input listeners to the view
 		this.mainGamePanel.getDrawingComponent().addKeyListener(this.inputHandler);
 		this.mainGamePanel.addMouseListener(inputHandler);
 		this.mainGamePanel.addMouseMotionListener(inputHandler);
@@ -89,20 +104,24 @@ public class GameController implements Runnable {
 		startGameLoop();
 	}
 
+    /**
+     * Initializes and starts the main game loop in a new thread.
+     */
 	private void startGameLoop() {
 		Thread gameThread = new Thread(this);
 		gameThread.start();
 	}
 
+    /**
+     * The core game loop, which runs continuously in a dedicated thread.
+     * It manages game updates and rendering to achieve a consistent frame rate (FPS).
+     */
 	public void run() {
 
 		double timePerFrame = 1000000000.0 / FPS_SET;
-
 		long previousTime = System.nanoTime();
-
-		int frames = 0;
 		long lastCheck = System.currentTimeMillis();
-
+		int frames = 0;
 		double deltaF = 0;
 
 		while (true) {
@@ -113,10 +132,9 @@ public class GameController implements Runnable {
 
 			if (deltaF >= 1) {
 				updateGame();
-				// ✅ CAMBIAMENTO FONDAMENTALE #1
-				// Chiamiamo repaint() ad ogni aggiornamento logico.
-				// Questo assicura che le animazioni (come quella del PlayerView)
-				// funzionino sempre, anche quando il modello non cambia stato.
+                // The repaint() method is called on every logic update. This ensures that animations
+                // in the view (like PlayerView) are always smooth, even if the model's state
+                // hasn't changed.
 				mainGamePanel.repaint();
 				deltaF--;
 				frames++;
@@ -132,19 +150,26 @@ public class GameController implements Runnable {
 
 	}
 
+    /**
+     * Resets player movement keys when the game window loses focus
+     * to prevent unwanted continuous movement.
+     */
 	public void gameLostFocus() {
 		inputHandler.resetKeys();
 	}
 
-	// Metodo chiamato ad ogni tick del game loop
+    /**
+     * Updates the game's logic based on the current {@link GameState}.
+     * This method is called on every tick of the game loop and delegates input handling
+     * and state updates to the appropriate handler.
+     */
 	private void updateGame() {
-
-		// NUOVO: Controllo globale del timer per gli stati attivi
+		// Check the game session timer if the game is in an active state
 		if (gameModel.getGameState() == GameState.PLAYING || gameModel.getGameState() == GameState.IN_ELEVATOR) {
 			GameSession session = gameModel.getCurrentGameSession();
 			if (session != null && session.getTimeLeft() <= 0) {
-				endGame(false); // Hai perso per tempo scaduto
-				return; // Esci per questo frame
+				endGame(false); // Game over due to timeout
+				return;
 			}
 		}
 
@@ -158,20 +183,19 @@ public class GameController implements Runnable {
 		case IN_ELEVATOR:
 			gameModel.getPlayer().setInAir(false);
 
-			// NUOVO: Permetti di mettere in pausa dall'ascensore
+			// Allow pausing from the elevator
 			if (inputHandler.isKeyPressed(KeyEvent.VK_ESCAPE)) {
 				AudioManager.getInstance().stopAllSounds();
 				AudioManager.getInstance().play("pause");
-				gameModel.setStateBeforePause(GameState.IN_ELEVATOR); // Salva lo stato attuale
+				gameModel.setStateBeforePause(GameState.IN_ELEVATOR);
 				gameModel.setGameState(GameState.PAUSED);
 				inputHandler.resetKeys();
-				break; // Esce dallo switch per questo frame
+				break;
 			}
 
-			// Se l'ascensore NON si sta muovendo, il player può muoversi
+			// Player can move if the elevator is not moving
 			if (!elevator.isMoving()) {
 
-				// Horizontal Movement
 				boolean anyMovementKeyPressed = inputHandler.isLeftPressed() || inputHandler.isRightPressed();
 				if (anyMovementKeyPressed) {
 					if (inputHandler.isLeftPressed()) {
@@ -181,26 +205,21 @@ public class GameController implements Runnable {
 						gameModel.getPlayer().moveRight();
 					}
 				} else {
-					// Se nessun tasto di movimento è premuto, il player va in idle
 					gameModel.getPlayer().setIdle();
 				}
 
-				// Logica di transizione al livello quando il player tocca il bordo
+				// Transition to a level when the player touches the screen edge
 				int currentFloor = elevator.getCurrentFloor();
-
 				if (PhysicsHandler.isLeavingElevator(gameModel.getPlayer())) {
 					if (gameModel.getPlayer().getDirection() == Directions.LEFT) {
-						System.out.println("Entro nel livello " + (currentFloor * 2 - 1));
 						gameModel.enterRoom(currentFloor * 2 - 1);
 					} else {
-						System.out.println("Entro nel livello " + (currentFloor * 2));
 						gameModel.enterRoom(currentFloor * 2);
 					}
 					gameModel.getPlayer().setIdle();
 				}
 
-				// Se il player preme "UP" o "DOWN", muove l'ascensore solo se non sta già
-				// andando.
+				// Move the elevator if the player is in the control area and presses UP/DOWN
 				if (gameModel.getPlayer().getHitbox().x >= (LOGIC_WIDTH / 2.25)
 						&& gameModel.getPlayer().getHitbox().getMaxX() <= (LOGIC_WIDTH / 1.77)) {
 					if (inputHandler.isUpPressed()) {
@@ -211,10 +230,9 @@ public class GameController implements Runnable {
 						inputHandler.resetVerticalKeys();
 					}
 				}
-
 			}
 
-			// Aggiorna la posizione dell'ascensore se è in movimento
+			// Update elevator position if it's in motion
 			if (elevator.isMoving()) {
 				gameModel.getPlayer().setIdle();
 				elevator.update();
@@ -225,24 +243,24 @@ public class GameController implements Runnable {
 			if (inputHandler.isKeyPressed(KeyEvent.VK_ESCAPE)) {
 				AudioManager.getInstance().stopAllSounds();
 				AudioManager.getInstance().play("pause");
-				gameModel.setStateBeforePause(GameState.PLAYING); // Salva lo stato attuale
+				gameModel.setStateBeforePause(GameState.PLAYING);
 				gameModel.setGameState(GameState.PAUSED);
 				inputHandler.resetKeys();
-				break; // Esce dallo switch per questo frame
+				break;
 			}
 
-			// 1. Controllo collisioni con i nemici
+			// Check for collisions with enemies
 			for (Enemy enemy : gameModel.getLevel().getEnemies()) {
 				Rectangle2D.Float playerHb = gameModel.getPlayer().getHitbox();
 				Rectangle2D.Float enemyHb = enemy.getHitbox();
 				Rectangle2D.Float enemyAb = enemy.getAttackBox();
 				if (playerHb.intersects(enemyHb) || (enemy.getState() == ATTACKING && playerHb.intersects(enemyAb))) {
 					gameModel.loseLife();
+					popupHandler.hidePopup();
 
-					// Controlla se il gioco è finito!
 					if (gameModel.getLives() <= 0) {
-						endGame(false); // Chiama endGame per calcolare il punteggio e fermare il timer
-						return; // Esci dall'update per questo frame
+						endGame(false);
+						return;
 					}
 
 					if (gameModel.getLives() > 0) {
@@ -253,61 +271,53 @@ public class GameController implements Runnable {
 				}
 			}
 
-			// 2. Controllo caduta "fuori dalla mappa"
+			// Check for falling out of the map
 			if (gameModel.getPlayer().getY() > GAME_HEIGHT) {
 				gameModel.loseLife();
-
 				if (gameModel.getLives() <= 0) {
 					endGame(false);
 					return;
 				}
-
 				if (gameModel.getLives() > 0) {
 					gameModel.getPlayer().resetPosition();
 				}
 			}
 
-			// Handle PCs
+			// Handle interaction with PCs (terminals)
 			for (PcTile pc : gameModel.getPcTiles()) {
 				if (pc.getHitbox().contains(gameModel.getPlayer().getHitbox())) {
 					if (inputHandler.isEPressed()) {
 						AudioManager.getInstance().stopAllSounds();
-						gameModel.setGameState(GameState.TERMINAL_OPEN); // Cambia stato
+						gameModel.setGameState(GameState.TERMINAL_OPEN);
 						AudioManager.getInstance().play("keystroke");
-						inputHandler.resetKeys(); // Resetta i tasti per evitare input indesiderati all'apertura
+						inputHandler.resetKeys();
 					}
 				}
 			}
 
-			// NUOVO: Gestione dell'interazione con l'arredamento (Furniture)
+			// Handle interaction with furniture
 			boolean playerIsInteractingWithFurniture = false;
-			for (FurnitureTile furniture : gameModel.getFurnitureTiles()) { // Assumi di avere getFurnitureTiles() nel
-																			// GameModel
+			for (FurnitureTile furniture : gameModel.getFurnitureTiles()) {
 				if (!furniture.isVanished()) {
 					if (furniture.getHitbox().intersects(gameModel.getPlayer().getHitbox())
 							&& furniture.getHitbox().x <= gameModel.getPlayer().getHitbox().getX()
 							&& furniture.getHitbox().getMaxX() >= gameModel.getPlayer().getHitbox().getMaxX()) {
 						if (inputHandler.isEPressed()) {
-							// Se il player preme E, avvia o continua la ricerca
 							playerIsInteractingWithFurniture = true;
 							furniture.setSearching(true);
 							popupHandler.showSearchPopup(furniture);
 							gameModel.getPlayer().setSearching();
-							// La logica di aggiornamento del progresso avverrà nel ciclo di update
 						} else {
-							// Se il player rilascia E, interrompe la ricerca
 							playerIsInteractingWithFurniture = false;
 							furniture.setSearching(false);
 							if (popupHandler.isSearchingPopupActive()) {
-								popupHandler.hidePopup(); // Nascondi il pop-up se era attivo
+								popupHandler.hidePopup();
 							}
 						}
 					} else {
-						// Se il player non è più a contatto con il mobile, interrompe la ricerca
 						if (furniture.isSearching()) {
 							playerIsInteractingWithFurniture = false;
 							furniture.setSearching(false);
-							// Nascondi il pop-up se era attivo per questo mobile
 							if (popupHandler.getCurrentFurniture() == furniture) {
 								popupHandler.hidePopup();
 							}
@@ -315,64 +325,48 @@ public class GameController implements Runnable {
 					}
 				}
 
-				// Aggiorna il progresso della ricerca in base al delta time (da implementare)
+				// Update search progress
 				if (furniture.isSearching()) {
-					// Nota: Avrai bisogno di un delta time. Se non lo hai, possiamo calcolarlo.
-					// Per ora, userò un valore fisso per semplicità.
-					// Dovresti calcolare il tempo trascorso tra i frame.
-					float deltaTime = 2.0f / FPS_SET; // Esempio: 1 secondo / 60 FPS
+					float deltaTime = 2.0f / FPS_SET;
 					furniture.updateSearchProgress(deltaTime);
 
-					// Controlla se la ricerca è completata
+					// Check if search is complete
 					if (furniture.getSearchProgress() >= furniture.getSearchTimeRequired()) {
-						furniture.setSearching(false); // Ricerca completata
-
-						// Nascondi il popup di ricerca
+						furniture.setSearching(false);
 						popupHandler.hidePopup();
 
-						// Logica del risultato della ricerca
 						if (furniture.hasPuzzlePiece()) {
-							// Mostra un messaggio di successo per 1.5 secondi
 							popupHandler.showNotificationPopup(furniture, "Piece found!", 1500);
-							gameModel.addPuzzlePiece(); // Add puzzle piece
-							furniture.setHasPuzzlePiece(false); // Rimuovi il pezzo dal mobile
+							gameModel.addPuzzlePiece();
+							furniture.setHasPuzzlePiece(false);
 						} else {
-							// Mostra un messaggio di fallimento per 1.5 secondi
 							popupHandler.showNotificationPopup(furniture, "Nothing here.", 1500);
 						}
-
 						furniture.vanish();
 					}
 				}
 			}
 
-			// Aggiorna lo stato del popup handler
 			popupHandler.updateSearchProgress();
-
-			// Apply gravity
 			gameModel.getPlayer().applyGravity(GRAVITY);
 
-			// Check if player is on ground
 			if (!PhysicsHandler.isOnGround(gameModel.getPlayer(), gameModel.getLevel().getLevelData())) {
 				gameModel.getPlayer().setInAir(true);
 				gameModel.getPlayer().applyGravity(GRAVITY);
 			}
 
-			// Handle vertical collisions
 			PhysicsHandler.handleVerticalCollisions(gameModel.getPlayer(), gameModel.getLevel().getLevelData());
 
 			// Handle lifts
 			for (LiftTile lift : gameModel.getLifts()) {
-				// Se l'ascensore ha una destinazione e non è ancora arrivato
 				if (lift.isMoving() && lift.getTargetY() != -1) {
-					// Muovi l'ascensore di un passo verso la sua destinazione
 					if (lift.getCurrentMovementDirection() == Directions.UP) {
 						if (lift.getHitbox().y > lift.getTargetY()) {
 							lift.moveUp();
 							gameModel.getPlayer().moveWithLift(-lift.getSpeed());
 							inputHandler.resetKeys();
 						} else {
-							lift.stop(); // Raggiunta la destinazione
+							lift.stop();
 						}
 					} else if (lift.getCurrentMovementDirection() == Directions.DOWN) {
 						if (lift.getHitbox().y < lift.getTargetY()) {
@@ -380,47 +374,39 @@ public class GameController implements Runnable {
 							gameModel.getPlayer().moveWithLift(lift.getSpeed());
 							inputHandler.resetKeys();
 						} else {
-							lift.stop(); // Raggiunta la destinazione
+							lift.stop();
 						}
 					}
-				} else { // L'ascensore è fermo o non ha una destinazione
+				} else {
 					List<Tile> stops = PhysicsHandler.getLiftStops(lift, gameModel.getLevel().getLevelData());
 					if (PhysicsHandler.isOnLift(gameModel.getPlayer(), lift)) {
-						// Player è sull'ascensore - gestisci il movimento dell'ascensore in base
-						// all'input
 						if (inputHandler.isUpPressed()) {
 							PhysicsHandler.moveLiftToNextStop(lift, Directions.UP, gameModel.getLevel().getLevelData(),
 									stops, gameModel.getPlayer());
-							inputHandler.resetVerticalKeys(); // Resetta i tasti verticali per evitare attivazioni
-																// multiple
+							inputHandler.resetVerticalKeys();
 						} else if (inputHandler.isDownPressed()) {
 							PhysicsHandler.moveLiftToNextStop(lift, Directions.DOWN,
 									gameModel.getLevel().getLevelData(), stops, gameModel.getPlayer());
-							inputHandler.resetVerticalKeys(); // Resetta i tasti verticali per evitare attivazioni
-																// multiple
+							inputHandler.resetVerticalKeys();
 						}
 					}
 				}
 			}
 
-			// Verifica se gli effetti di congelamento sono attivi sul livello corrente
+			// Update enemies if they are not frozen
 			if (gameModel.getLevel() != null && !gameModel.getLevel().areEnemiesFrozen()) {
-				// Aggiorna lo stato di tutti i nemici
 				for (Enemy enemy : gameModel.getEnemies()) {
 					enemy.update(System.currentTimeMillis(), gameModel.getLevel(), gameModel.getPlayer());
 				}
 			}
 
-			// Handle player movement only if not interacting with furnitures
+			// Handle player movement if not interacting with furniture
 			if (!playerIsInteractingWithFurniture) {
-
-				// Handle jump input
 				if (inputHandler.isJumpPressed() && !gameModel.getPlayer().isInAir()) {
 					gameModel.getPlayer().jump();
 					AudioManager.getInstance().play("jump");
 				}
 
-				// Horizontal Movement
 				boolean anyMovementKeyPressed = inputHandler.isLeftPressed() || inputHandler.isRightPressed();
 				if (anyMovementKeyPressed) {
 					if (inputHandler.isLeftPressed()) {
@@ -430,7 +416,6 @@ public class GameController implements Runnable {
 						} else
 							gameModel.getPlayer().setIdle();
 						if (PhysicsHandler.isLeavingLevel(gameModel.getPlayer())) {
-							System.out.println("Entering Elevator!");
 							gameModel.exitRoom(Directions.LEFT);
 						}
 					}
@@ -441,28 +426,24 @@ public class GameController implements Runnable {
 						} else
 							gameModel.getPlayer().setIdle();
 						if (PhysicsHandler.isLeavingLevel(gameModel.getPlayer())) {
-							System.out.println("Entering Elevator!");
 							gameModel.exitRoom(Directions.RIGHT);
 						}
 					}
 				} else {
-					// Se nessun tasto di movimento è premuto, il player va in idle
 					gameModel.getPlayer().setIdle();
 				}
 			}
 
 			GameSession session = gameModel.getCurrentGameSession();
 
-			// Controllo sconfitta per tempo scaduto
 			if (session.getTimeLeft() <= 0) {
-				endGame(false); // Hai perso
-				return; // Esce dall'update per questo frame
+				endGame(false);
+				return;
 			}
 
-			// Controllo vittoria (es. ci sono 8 pezzi in totale)
 			final int TOTAL_PUZZLE_PIECES = 8;
 			if (session.getPuzzlePiecesFound() >= TOTAL_PUZZLE_PIECES) {
-				endGame(true); // Hai vinto!
+				endGame(true);
 				return;
 			}
 
@@ -491,12 +472,20 @@ public class GameController implements Runnable {
 
 	}
 
+    /**
+     * Finalizes the game session when the player wins or loses.
+     * This method stops the session timer, calculates the final score and experience points (XP),
+     * updates the active user profile, and transitions the game to the appropriate
+     * victory or game over screen.
+     *
+     * @param won True if the player won the game, false otherwise.
+     */
 	private void endGame(boolean won) {
 		GameSession session = gameModel.getCurrentGameSession();
 		if (session == null)
 			return;
 
-		session.stopTimer(); // <-- PRIMA MODIFICA: Ferma il timer subito!
+		session.stopTimer();
 
 		UserProfile profile = gameModel.getActiveProfile();
 		if (profile == null)
@@ -511,13 +500,11 @@ public class GameController implements Runnable {
 		else
 			score = (session.getPuzzlePiecesFound() * (pointsPerPiece / 2));
 
-		// NUOVO: Calcolo dell'esperienza guadagnata
 		long xpGained = (long) (score * XP_PER_SCORE_POINT);
 		if (won) {
 			xpGained += WIN_BONUS_XP;
 		}
-
-		// AGGIUNGI QUESTA RIGA
+        
 		gameModel.setLastScore(score);
 
 		long playtime = session.getElapsedTime();

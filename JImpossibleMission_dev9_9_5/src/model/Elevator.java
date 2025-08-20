@@ -1,9 +1,13 @@
 package model;
 
 import java.util.Observable;
-
 import controller.AudioManager;
 
+/**
+ * Represents the game's elevator, managing its state, movement between floors, and position.
+ * It extends {@link Observable} to notify observers (like the view) of any changes to its state,
+ * such as when it starts or stops moving.
+ */
 @SuppressWarnings("deprecation")
 public class Elevator extends Observable {
 
@@ -14,9 +18,9 @@ public class Elevator extends Observable {
     
     private int spawnOffset = 174;
     
-    // Hard-coded: posizioni Y logiche per ogni piano. 
-    // Indice 0 = Piano 1, Indice 1 = Piano 2, ecc.
-    // L'ascensore scende, quindi Y aumenta.
+    // Hard-coded logical Y positions for each floor.
+    // Index 0 = Floor 1, Index 1 = Floor 2, etc.
+    // As the elevator goes down, its Y value increases.
     private final float[] floorYPositions = {
         0.0f,  
         1456.0f - spawnOffset,
@@ -25,18 +29,24 @@ public class Elevator extends Observable {
     };
     
     private float targetY;
-    private final float movementSpeed = 10.0f; // Velocità di movimento in unità logiche
+    private final float movementSpeed = 10.0f;
 
-    // Costruttore
+    /**
+     * Constructs an Elevator.
+     *
+     * @param totalFloors  The total number of floors the elevator can access.
+     * @param initialFloor The floor where the elevator starts.
+     */
     public Elevator(int totalFloors, int initialFloor) {
         this.totalFloors = totalFloors;
         this.currentFloor = initialFloor;
-        // Inizializza la posizione y in base al piano iniziale
         this.yPosition = floorYPositions[initialFloor - 1];
         this.isMoving = false;
     }
 
-    // Metodi per il movimento
+    /**
+     * Initiates movement to the floor above, if possible.
+     */
     public void moveUp() {
         if (currentFloor > 1 && !isMoving) {
             currentFloor--;
@@ -49,6 +59,9 @@ public class Elevator extends Observable {
         }
     }
 
+    /**
+     * Initiates movement to the floor below, if possible.
+     */
     public void moveDown() {
         if (currentFloor < totalFloors - 1 && !isMoving) {
             currentFloor++;
@@ -61,7 +74,10 @@ public class Elevator extends Observable {
         }
     }
     
-    // Aggiorna lo stato dell'ascensore, chiamato dal GameController
+    /**
+     * Updates the elevator's position on each game tick if it is moving.
+     * This method smoothly interpolates the position towards the target floor.
+     */
     public void update() {
         if (isMoving) {
             if (Math.abs(yPosition - targetY) < movementSpeed) {
@@ -79,7 +95,8 @@ public class Elevator extends Observable {
         }
     }
 
-    // Getter
+    // --- GETTERS ---
+
     public int getCurrentFloor() {
         return currentFloor;
     }

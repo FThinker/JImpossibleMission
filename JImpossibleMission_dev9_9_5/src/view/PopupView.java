@@ -1,4 +1,3 @@
-// PopupView.java (Nuovo file nel package view)
 package view;
 
 import controller.PopupHandler;
@@ -7,92 +6,97 @@ import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.geom.RoundRectangle2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.BasicStroke;
-
 import model.FurnitureTile;
-
 import static model.GameConstants.*;
 
+/**
+ * Renders in-game popups, such as notifications and search progress bars.
+ * It retrieves the state and content of the popup from the {@link PopupHandler}.
+ */
 public class PopupView {
 
     private PopupHandler popupHandler;
 
+    /**
+     * Constructs a PopupView.
+     *
+     * @param popupHandler The handler that manages the state of the popups.
+     */
     public PopupView(PopupHandler popupHandler) {
         this.popupHandler = popupHandler;
     }
 
+    /**
+     * Draws the currently active popup, if any.
+     *
+     * @param g The Graphics context to draw on.
+     */
     public void draw(Graphics g) {
         String text = popupHandler.getPopupText();
         if (text.isEmpty()) {
-            return; // Non disegnare nulla se non c'è testo
+            return; // Do nothing if there is no popup to display
         }
 
         int popupX = 0;
         int popupY = 0;
-        int popupWidth = 200; // Larghezza fissa
-        int popupHeight = 50; // Altezza fissa
+        int popupWidth = 200;
+        int popupHeight = 50;
 
-        // Calcola la posizione del pop-up in base al suo tipo
+        // Position the popup based on its type (search vs. notification)
         if (popupHandler.isSearchingPopupActive()) {
-            // Posiziona il popup di ricerca sopra la furniture
             FurnitureTile furniture = popupHandler.getCurrentFurniture();
             if (furniture != null) {
                 popupX = (int) (furniture.getHitbox().x * SCALE);
-                popupY = (int) (furniture.getHitbox().y * SCALE) - 60; // 60 pixel sopra il mobile
+                popupY = (int) (furniture.getHitbox().y * SCALE) - 60; // Position above the furniture
             } else {
-                // Fallback al centro dello schermo se non c'è una furniture
-                popupX = (GAME_WIDTH - popupWidth) / 2;
+                popupX = (GAME_WIDTH - popupWidth) / 2; // Fallback to center
                 popupY = (GAME_HEIGHT - popupHeight) / 2;
             }
-            popupHeight = 60; // Aumento l'altezza per la barra di progresso
+            popupHeight = 60; // Taller to accommodate progress bar
         } else if (popupHandler.isNotificationPopupActive() && popupHandler.getCurrentFurniture() != null) {
-            // Posiziona il popup di notifica al centro dello schermo
         	FurnitureTile furniture = popupHandler.getCurrentFurniture();
         	popupX = (int) (furniture.getHitbox().x * SCALE);
-            popupY = (int) (furniture.getHitbox().y * SCALE) - 60; // 60 pixel sopra il mobile
+            popupY = (int) (furniture.getHitbox().y * SCALE) - 60;
         }
 
-        // Disegna lo sfondo della nuvoletta
-        g.setColor(new Color(0, 0, 0, 200)); // Bianco semi-trasparente
-        g.fillRect(popupX, popupY, popupWidth, popupHeight); // Bordo arrotondato
+        // Draw the popup background
+        g.setColor(new Color(0, 0, 0, 200));
+        g.fillRect(popupX, popupY, popupWidth, popupHeight);
 
-        // Disegna il contorno della nuvoletta
+        // Draw the popup border
         Graphics2D g2d = (Graphics2D) g;
         g2d.setColor(Color.GREEN);
         g2d.setStroke(new BasicStroke(2));
         g2d.drawRect(popupX, popupY, popupWidth, popupHeight);
 
-        // Disegna il testo
+        // Draw the text
         g2d.setColor(Color.GREEN);
         g2d.setFont(new Font("Monospaced", Font.PLAIN, (int)(9 * SCALE)));
-        
         FontMetrics metrics = g2d.getFontMetrics();
         int textWidth = metrics.stringWidth(text);
         int textX = popupX + (popupWidth - textWidth) / 2;
         int textY = popupY + metrics.getAscent() + (popupHeight - metrics.getHeight()) / 3;
         g2d.drawString(text, textX, textY);
         
-        // Disegna la barra di progresso se è un pop-up di ricerca
+        // If it's a searching popup, draw the progress bar
         if (popupHandler.isSearchingPopupActive()) {
             float progress = popupHandler.getSearchProgress();
             float maxTime = popupHandler.getCurrentFurniture().getSearchTimeRequired();
             float progressRatio = progress / maxTime;
             
-            // Disegna il background della barra
-            g2d.setColor(new Color(0, 0, 0, 0));
             int barX = popupX + 20;
             int barY = popupY + 35;
             int barWidth = popupWidth - 40;
             int barHeight = 10;
+
+            // Draw progress bar background and fill
+            g2d.setColor(new Color(0, 0, 0, 0));
             g2d.fillRect(barX, barY, barWidth, barHeight);
-            
-            // Disegna la barra di progresso
             g2d.setColor(Color.GREEN);
             g2d.fillRect(barX, barY, (int) (barWidth * progressRatio), barHeight);
             
-            // Disegna il contorno della barra di progresso
+            // Draw progress bar border
             g2d.setColor(Color.GREEN);
             g2d.drawRect(barX, barY, barWidth, barHeight);
         }

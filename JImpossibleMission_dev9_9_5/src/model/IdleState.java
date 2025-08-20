@@ -1,5 +1,10 @@
 package model;
 
+/**
+ * Implements the "Idle" state for an enemy's state machine.
+ * In this state, the enemy waits for a specified duration before transitioning
+ * to its next action, which is determined by its behavior context.
+ */
 public class IdleState implements EnemyStateHandler {
 
 	@Override
@@ -12,29 +17,18 @@ public class IdleState implements EnemyStateHandler {
 		long idleDuration = context.getDurationForState(EnemyState.IDLE);
 
 		if (context.getElapsed(currentTime) >= idleDuration) {
-//			if (context instanceof StandingRobotBehavior) {
-//				StandingRobotBehavior specificContext = (StandingRobotBehavior) context;
-//				int step = specificContext.getBehaviorStep();
-//				if (step == 0) {
-//					specificContext.changeState(new AttackingState(), enemy, currentTime);
-//					specificContext.setBehaviorStep(1);
-//				} else if (step == 2) {
-//					specificContext.changeState(new TurningState(), enemy, currentTime);
-//					specificContext.setBehaviorStep(3);
-//				}
-//			}
-			if (context.getElapsed(currentTime) >= idleDuration) {
-	            // Chiediamo al contesto qual è lo stato successivo
-	            EnemyStateHandler nextState = getNextStateFor(context);
-	            context.changeState(nextState, enemy, currentTime);
-	        }
-		}
+            EnemyStateHandler nextState = getNextStateFor(context);
+            context.changeState(nextState, enemy, currentTime);
+        }
 	}
 	
-	// Metodo helper per determinare lo stato successivo in base al tipo di behavior
+    /**
+     * Determines the next state for the enemy based on its behavior type.
+     * @param context The behavior context of the enemy.
+     * @return The next state handler for the enemy.
+     */
     private EnemyStateHandler getNextStateFor(EnemyBehavior context) {
         if (context instanceof StandingRobotBehavior) {
-            // Logica specifica per lo StandingRobot
             StandingRobotBehavior specificContext = (StandingRobotBehavior) context;
             int step = specificContext.getBehaviorStep();
             if (step == 0) {
@@ -45,17 +39,14 @@ public class IdleState implements EnemyStateHandler {
                 return new TurningState();
             }
         } else if (context instanceof MovingRobotBehavior) {
-            // Logica specifica per il MovingRobot
-            // Dopo essere stato in idle (perché ha visto il player), attacca.
-            // Se l'idle era quello iniziale, inizia a camminare.
-            // (Questa logica va affinata in MovingRobotBehavior)
-            return new AttackingState(); // Esempio semplice
+            // After being idle (e.g., after seeing the player), a moving robot will attack.
+            return new AttackingState();
         }
-        return this; // Default: non fare nulla
+        return this; // Default: remain in idle (should not happen with timed states)
     }
 
 	@Override
 	public void exit(Enemy enemy) {
-		// Niente
+		// No specific action needed when exiting idle state.
 	}
 }

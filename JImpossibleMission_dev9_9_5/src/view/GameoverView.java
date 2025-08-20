@@ -1,4 +1,3 @@
-// in view/GameoverView.java
 package view;
 
 import controller.GameoverHandler;
@@ -9,31 +8,46 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import static model.GameConstants.*;
 
+/**
+ * Renders the "Game Over" screen.
+ * This view displays the final score and playtime, and provides a button to return to the main menu.
+ */
 public class GameoverView {
     
     private GameoverHandler handler;
     private GameModel gameModel;
 
+    /**
+     * Constructs a GameoverView.
+     *
+     * @param gameModel The game model to retrieve final game statistics from.
+     * @param gameoverHandler The handler that manages input for this screen.
+     */
     public GameoverView(GameModel gameModel, GameoverHandler gameoverHandler) {
         this.gameModel = gameModel;
         this.handler = gameoverHandler;
     }
     
+    /**
+     * Draws the game over screen.
+     *
+     * @param g The Graphics context to draw on.
+     */
     public void draw(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
 
-        // Velo scuro
+        // Dark overlay
         g2d.setColor(new Color(0, 0, 0, 150));
         g2d.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-        // Titolo GAME OVER
+        // "GAME OVER" title
         g2d.setFont(UIStyle.TITLE_FONT);
-        g2d.setColor(Color.RED); // Un tocco di colore per il game over
+        g2d.setColor(Color.RED);
         String title = "GAME OVER";
         int titleWidth = g2d.getFontMetrics().stringWidth(title);
         g2d.drawString(title, (GAME_WIDTH - titleWidth) / 2, (int)(100 * SCALE));
 
-        // Mostra statistiche partita
+        // Display final game stats
         g2d.setFont(UIStyle.TEXT_FONT);
         g2d.setColor(UIStyle.FOREGROUND);
         
@@ -41,21 +55,27 @@ public class GameoverView {
             long elapsedTime = gameModel.getCurrentGameSession().getElapsedTime();
             long minutes = (elapsedTime / 1000) / 60;
             long seconds = (elapsedTime / 1000) % 60;
-            String timeStr = String.format("Tempo di gioco: %02d:%02d", minutes, seconds);
+            String timeStr = String.format("Playtime: %02d:%02d", minutes, seconds);
             int timeWidth = g2d.getFontMetrics().stringWidth(timeStr);
             g2d.drawString(timeStr, (GAME_WIDTH - timeWidth) / 2, 300);
 
-            // Per il punteggio, dobbiamo trovare un modo per salvarlo al momento del game over
-            // Lo aggiungeremo al GameModel per semplicità
-            String scoreStr = "Punteggio finale: " + gameModel.getLastScore();
+            String scoreStr = "Final score: " + gameModel.getLastScore();
             int scoreWidth = g2d.getFontMetrics().stringWidth(scoreStr);
             g2d.drawString(scoreStr, (GAME_WIDTH - scoreWidth) / 2, 340);
         }
 
-        // Bottone per tornare al menu
-        drawButton(g2d, "Torna al Menu", handler.getMenuButtonBounds(), handler.isMenuHover());
+        // Button to return to menu
+        drawButton(g2d, "Return to Menu", handler.getMenuButtonBounds(), handler.isMenuHover());
     }
     
+    /**
+     * A helper method to draw a styled button.
+     *
+     * @param g The Graphics2D context.
+     * @param text The text to display on the button.
+     * @param bounds The rectangle defining the button's position and size.
+     * @param isHover True if the mouse is currently hovering over the button.
+     */
     private void drawButton(Graphics2D g, String text, Rectangle bounds, boolean isHover) {
         g.setColor(isHover ? UIStyle.BUTTON_BG_HOVER : UIStyle.BUTTON_BG);
         g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);

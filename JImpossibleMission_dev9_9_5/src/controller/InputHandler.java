@@ -2,32 +2,39 @@ package controller;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.HashSet;
 import java.util.Set;
 
-// La classe ora estende KeyAdapter e implementa le interfacce del mouse
+/**
+ * Centralized input manager for handling all keyboard and mouse events.
+ * It tracks the state of pressed keys and mouse buttons, providing a clean interface
+ * for other parts of the game to query user input.
+ */
 public class InputHandler extends KeyAdapter implements MouseListener, MouseMotionListener {
-    // Stato dei tasti di movimento
+    // Keyboard state flags
     private boolean upPressed, downPressed, leftPressed, rightPressed;
     private boolean jumpPressed;
     private boolean ePressed;
-
     private Set<Integer> pressedKeys = new HashSet<>();
 
-    // NUOVI CAMPI: Stato del mouse
+    // Mouse state fields
     private int mouseX, mouseY;
     private boolean mouseButtonPressed;
     private int mouseButtonCode;
 
+    /**
+     * Constructs an InputHandler and initializes all input states.
+     */
     public InputHandler() {
         resetAllInputs();
     }
 
-    // Metodo per resettare TUTTI gli input (tastiera e mouse)
+    /**
+     * Resets all keyboard and mouse input states to their default (unpressed) values.
+     */
     public void resetAllInputs() {
         upPressed = false;
         downPressed = false;
@@ -36,51 +43,64 @@ public class InputHandler extends KeyAdapter implements MouseListener, MouseMoti
         jumpPressed = false;
         ePressed = false;
         pressedKeys.clear();
-        resetMouse(); // Chiama il nuovo metodo di reset del mouse
+        resetMouse();
     }
     
-    // Metodo per resettare solo i tasti della tastiera
+    /**
+     * Resets only the keyboard input states.
+     * For simplicity, this currently resets all inputs.
+     */
     public void resetKeys() {
-        resetAllInputs(); // Per semplicità, ora questo resetta tutto
+        resetAllInputs();
     }
     
-    // NUOVO: Metodo specifico per resettare lo stato del mouse dopo un click
+    /**
+     * Resets the mouse button state after a click has been processed.
+     */
     public void resetMouse() {
         mouseButtonPressed = false;
-        mouseButtonCode = -1; // -1 indica nessun bottone premuto
+        mouseButtonCode = -1; // -1 indicates no button pressed
     }
 
+    /**
+     * Resets only the vertical movement keys (up/down).
+     */
     public void resetVerticalKeys() {
         upPressed = false;
         downPressed = false;
     }
 
-    // --- GETTER TASTIERA ---
+    // --- KEYBOARD GETTERS ---
     public boolean isUpPressed() { return upPressed; }
     public boolean isDownPressed() { return downPressed; }
     public boolean isLeftPressed() { return leftPressed; }
     public boolean isRightPressed() { return rightPressed; }
     public boolean isJumpPressed() { return jumpPressed; }
     public boolean isEPressed() { return ePressed; }
+    
+    /**
+     * Checks if a specific key is currently being held down.
+     * @param keyCode The key code to check (e.g., {@link KeyEvent#VK_ESCAPE}).
+     * @return True if the key is pressed, false otherwise.
+     */
     public boolean isKeyPressed(int keyCode) { return pressedKeys.contains(keyCode); }
 
-    // --- NUOVI GETTER MOUSE ---
+    // --- MOUSE GETTERS ---
     public int getMouseX() { return mouseX; }
     public int getMouseY() { return mouseY; }
 
     /**
-     * Controlla se un bottone specifico del mouse è stato premuto.
-     * @param buttonCode (es. MouseEvent.BUTTON1 per il click sinistro)
-     * @return true se il bottone specificato è premuto, false altrimenti.
+     * Checks if a specific mouse button is currently pressed.
+     * @param buttonCode The mouse button code (e.g., {@link MouseEvent#BUTTON1}).
+     * @return True if the specified button is pressed, false otherwise.
      */
     public boolean isMouseButtonPressed(int buttonCode) {
         return mouseButtonPressed && this.mouseButtonCode == buttonCode;
     }
 
-    // --- METODI KEYLISTENER ---
+    // --- KEYLISTENER METHODS ---
     @Override
     public void keyPressed(KeyEvent e) {
-        // ... il tuo codice esistente va benissimo qui ...
         int keyCode = e.getKeyCode();
         pressedKeys.add(keyCode);
         
@@ -96,7 +116,6 @@ public class InputHandler extends KeyAdapter implements MouseListener, MouseMoti
 
     @Override
     public void keyReleased(KeyEvent e) {
-        // ... il tuo codice esistente va benissimo qui ...
         int keyCode = e.getKeyCode();
         pressedKeys.remove(keyCode);
         
@@ -110,7 +129,7 @@ public class InputHandler extends KeyAdapter implements MouseListener, MouseMoti
         }
     }
     
-    // --- NUOVI METODI MOUSELISTENER E MOUSEMOTIONLISTENER ---
+    // --- MOUSELISTENER AND MOUSEMOTIONLISTENER METHODS ---
     @Override
     public void mousePressed(MouseEvent e) {
         mouseButtonPressed = true;
@@ -119,8 +138,7 @@ public class InputHandler extends KeyAdapter implements MouseListener, MouseMoti
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        // Potremmo resettare qui, ma è meglio farlo manualmente dagli handler
-        // per essere sicuri che il click sia stato "consumato".
+        // Reset manually in handlers to ensure the click is "consumed".
     }
 
     @Override
@@ -131,30 +149,25 @@ public class InputHandler extends KeyAdapter implements MouseListener, MouseMoti
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        // Aggiorna le coordinate anche durante il trascinamento
         mouseX = e.getX();
         mouseY = e.getY();
     }
 
-    // Metodi non utilizzati ma richiesti dalle interfacce
-    @Override
-    public void mouseClicked(MouseEvent e) {}
-
-    @Override
-    public void mouseEntered(MouseEvent e) {}
-
-    @Override
-    public void mouseExited(MouseEvent e) {}
+    // Unused but required by interfaces
+    @Override public void mouseClicked(MouseEvent e) {}
+    @Override public void mouseEntered(MouseEvent e) {}
+    @Override public void mouseExited(MouseEvent e) {}
     
     /**
-     * Controlla se un tasto è stato premuto e "consuma" l'evento,
-     * rimuovendolo dalla lista. Ideale per azioni singole come navigare nei menu.
-     * @param keyCode Il codice del tasto da controllare.
-     * @return true se il tasto era premuto, false altrimenti.
+     * Checks if a key was pressed and then "consumes" the event by removing it from the set.
+     * This is ideal for single-press actions like navigating menus.
+     *
+     * @param keyCode The key code to check.
+     * @return True if the key was pressed, false otherwise.
      */
     public boolean consumeKeyPress(int keyCode) {
         if (pressedKeys.contains(keyCode)) {
-            pressedKeys.remove(keyCode); // Rimuovi il tasto dopo averlo controllato
+            pressedKeys.remove(keyCode);
             return true;
         }
         return false;

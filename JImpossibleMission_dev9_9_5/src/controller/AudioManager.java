@@ -8,26 +8,43 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 
-/*
- *  Versione migliorata di AudioManager: 
- *  pre-carica tutti gli effetti sonori all'avvio del gioco
- *  e gestisce separatamente la musica di sottofondo.
+/**
+ * Manages all audio playback for the game, including sound effects (SFX) and music.
+ * This class follows the Singleton pattern to provide a centralized point of control for audio.
+ * It pre-loads all sound effects to ensure low-latency playback during gameplay.
  */
 public class AudioManager {
     private static AudioManager instance;
 
-    // Mappa per pre-caricare gli effetti sonori (SFX)
+    /**
+     * A map to store pre-loaded sound effect clips for quick access.
+     */
     private Map<String, Clip> soundClips;
-    // Clip separata per la musica, per poterla controllare (fermare, loopare)
+    
+    /**
+     * A dedicated clip for handling background music, allowing it to be looped and stopped independently.
+     */
     private Clip musicClip;
     
+    /**
+     * A dedicated clip for handling menu music.
+     */
     private Clip menuMusicClip;
 
+    /**
+     * Private constructor to enforce the Singleton pattern.
+     * Initializes the sound clips map and pre-loads all sounds.
+     */
     private AudioManager() {
         soundClips = new HashMap<>();
         loadAllSounds();
     }
 
+    /**
+     * Returns the single instance of the AudioManager, creating it if necessary.
+     *
+     * @return The singleton instance of AudioManager.
+     */
     public static AudioManager getInstance() {
         if (instance == null) {
             instance = new AudioManager();
@@ -35,13 +52,16 @@ public class AudioManager {
         return instance;
     }
     
+    /**
+     * Loads all sound effects and music tracks into memory at startup.
+     */
     private void loadAllSounds() {
-    	loadSound("jump", "/audio/sfx/jump.wav");
+        loadSound("jump", "/audio/sfx/jump.wav");
         loadSound("step", "/audio/sfx/step.wav");
         loadSound("step_2", "/audio/sfx/step_2.wav");
         loadSound("death", "/audio/sfx/death.wav");
         loadSound("freeze", "/audio/sfx/freeze.wav");
-    	loadSound("hover", "/audio/sfx/hover.wav");
+        loadSound("hover", "/audio/sfx/hover.wav");
         loadSound("confirm", "/audio/sfx/confirm.wav");
         loadSound("pause", "/audio/sfx/pause.wav");
         loadSound("unpause", "/audio/sfx/unpause.wav");
@@ -57,7 +77,10 @@ public class AudioManager {
     }
 
     /**
-     * Carica un effetto sonoro nella mappa.
+     * Loads a single sound file from the given path and stores it as a Clip in the soundClips map.
+     *
+     * @param name     The key to associate with the sound.
+     * @param filename The resource path to the audio file.
      */
     public void loadSound(String name, String filename) {
         try {
@@ -68,29 +91,33 @@ public class AudioManager {
             clip.open(audioIn);
             soundClips.put(name, clip);
         } catch (Exception e) {
-            System.err.println("Errore nel caricamento del suono: " + filename);
+            System.err.println("Error loading sound: " + filename);
             e.printStackTrace();
         }
     }
 
     /**
-     * Riproduce un effetto sonoro pre-caricato.
+     * Plays a pre-loaded sound effect once.
+     * If the sound is already playing, it is stopped and restarted from the beginning.
+     *
+     * @param name The key of the sound to play.
      */
     public void play(String name) {
         Clip clip = soundClips.get(name);
         if (clip != null) {
-            // Se sta già suonando, lo ferma e lo riavvolge per permettere suoni sovrapposti
             if (clip.isRunning()) {
                 clip.stop();
             }
-            clip.setFramePosition(0); // Riavvolge il suono all'inizio
+            clip.setFramePosition(0); // Rewind to the start
             clip.start();
         }
     }
     
     /**
-     * NUOVO METODO: Avvia un suono specifico in loop.
-     * Se sta già suonando, non fa nulla.
+     * Plays a pre-loaded sound effect in a continuous loop.
+     * If the sound is already looping, this method does nothing.
+     *
+     * @param name The key of the sound to loop.
      */
     public void loop(String name) {
         Clip clip = soundClips.get(name);
@@ -101,7 +128,9 @@ public class AudioManager {
     }
     
     /**
-     * NUOVO METODO: Ferma un suono specifico che era in loop.
+     * Stops a sound effect that is currently playing or looping.
+     *
+     * @param name The key of the sound to stop.
      */
     public void stop(String name) {
         Clip clip = soundClips.get(name);
@@ -111,10 +140,12 @@ public class AudioManager {
     }
 
     /**
-     * Carica e riproduce in loop una traccia musicale.
+     * Streams and plays a music file in a continuous loop.
+     * If other music is already playing, it will be stopped first.
+     *
+     * @param filename The resource path to the music file.
      */
     public void loopMusic(String filename) {
-        // Ferma la musica precedente, se presente
         stopMusic();
         
         try {
@@ -123,15 +154,15 @@ public class AudioManager {
             AudioInputStream audioIn = AudioSystem.getAudioInputStream(bufferedIn);
             musicClip = AudioSystem.getClip();
             musicClip.open(audioIn);
-            musicClip.loop(Clip.LOOP_CONTINUOUSLY); // Imposta il loop infinito
+            musicClip.loop(Clip.LOOP_CONTINUOUSLY);
         } catch (Exception e) {
-            System.err.println("Errore nel caricamento della musica: " + filename);
+            System.err.println("Error loading music: " + filename);
             e.printStackTrace();
         }
     }
 
     /**
-     * Ferma la musica attualmente in riproduzione.
+     * Stops the currently playing background music.
      */
     public void stopMusic() {
         if (musicClip != null && musicClip.isRunning()) {
@@ -140,10 +171,13 @@ public class AudioManager {
     }
     
     /**
-     * NUOVO METODO: Avvia la musica del menu in loop.
+     * Plays the main menu music in a loop.
+     * Stops any other playing music before starting.
+     *
+     * @param name The key of the menu music clip.
      */
     public void loopMenuMusic(String name) {
-        stopAllMusic(); // Ferma qualsiasi musica prima di iniziare quella nuova
+        stopAllMusic();
         
         menuMusicClip = soundClips.get(name);
         if (menuMusicClip != null && !menuMusicClip.isRunning()) {
@@ -153,7 +187,7 @@ public class AudioManager {
     }
 
     /**
-     * NUOVO METODO: Ferma specificamente la musica del menu.
+     * Stops the main menu music if it is playing.
      */
     public void stopMenuMusic() {
         if (menuMusicClip != null && menuMusicClip.isRunning()) {
@@ -162,15 +196,18 @@ public class AudioManager {
     }
 
     /**
-     * NUOVO METODO HELPER: Ferma tutta la musica (menu e gioco).
+     * A helper method to stop all currently playing music (both in-game and menu).
      */
     private void stopAllMusic() {
         stopMusic();
         stopMenuMusic();
     }
     
+    /**
+     * Stops all currently playing sound effects and music clips.
+     * This is useful when pausing the game or transitioning between states.
+     */
     public void stopAllSounds() {
-        // Itera su tutti i clip pre-caricati
         for (Clip clip : soundClips.values()) {
             if (clip != null && clip.isRunning()) {
                 clip.stop();

@@ -1,47 +1,46 @@
-// WalkingState.java (Nuovo file)
 package model;
 
 import static model.GameConstants.*;
-
 import controller.AudioManager;
 
+/**
+ * Implements the "Moving" state for an enemy's state machine.
+ * In this state, the enemy moves forward until it detects a reason to change state,
+ * such as seeing the player, reaching an edge, or hitting a wall.
+ */
 public class MovingState implements EnemyStateHandler {
 
 	@Override
 	public void enter(Enemy enemy) {
-		enemy.setState(EnemyState.MOVING); // Dovrai aggiungere WALKING a EnemyState
+		enemy.setState(EnemyState.MOVING);
 		AudioManager.getInstance().loop("robot_bleep");
 	}
 
 	@Override
 	public void update(Enemy enemy, EnemyBehavior context, long currentTime, Level levelData, Player player) {
-		// --- 1. Controllo degli eventi che causano una transizione di stato ---
+		// --- 1. Check for events that trigger a state transition ---
 
-		// Se l'attack box del nemico interseca l'hitbox del player...
+		// If the enemy's attack box intersects with the player, stop to attack.
 		if (enemy.getAttackBox().intersects(player.getHitbox()) || player.getHitbox().intersects(enemy.getAttackBox())) {
-			// ...si ferma in IDLE (per poi attaccare).
 			context.changeState(new IdleState(), enemy, currentTime);
-			return; // Usciamo subito per evitare di eseguire il movimento
+			return;
 		}
 
-		// Se il nemico è al bordo di una piattaforma...
+		// If the enemy is at the edge of a platform or facing a wall, turn around.
 		if (isAtEdge(enemy, levelData) || isFacingWall(enemy, levelData)) {
-			// ...si gira.
 			context.changeState(new TurningState(), enemy, currentTime);
-			return; // Usciamo subito
+			return;
 		}
 
-		// --- 2. Azione dello stato ---
+		// --- 2. Perform the state's action ---
 
-		// Se nessuna transizione è avvenuta, il nemico continua a muoversi.
+		// If no transition occurred, continue moving.
 		enemy.move();
 	}
-
+    
 	/**
-	 * Controlla se il nemico si trova sul bordo di una piattaforma. Questa logica
-	 * dipende da come è strutturato il tuo LevelData.
-	 * 
-	 * @return true se il nemico sta per cadere, altrimenti false.
+	 * Checks if the enemy is at the edge of a platform.
+	 * @return True if the enemy is about to fall, otherwise false.
 	 */
 	private boolean isAtEdge(Enemy enemy, Level levelData) {
 		if (enemy.isFacingRight()) {
@@ -64,6 +63,10 @@ public class MovingState implements EnemyStateHandler {
 		return false;
 	}
 	
+	/**
+	 * Checks if the enemy is facing a wall.
+	 * @return True if a wall is directly in front of the enemy, otherwise false.
+	 */
 	private boolean isFacingWall(Enemy enemy, Level levelData) {
 		if (enemy.isFacingRight()) {
 			int nextPosY = (int) (enemy.getHitbox().getY()  / TILES_DEFAULT_SIZE);

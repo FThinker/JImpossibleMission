@@ -2,13 +2,17 @@ package model;
 
 import java.awt.Point;
 import java.awt.geom.Rectangle2D;
-
 import static model.Directions.*;
 
+/**
+ * Represents the player character controlled by the user.
+ * This class manages the player's state, position, movement, physics (gravity, jumping),
+ * and hitbox. It extends {@link Entity} and notifies observers of changes.
+ */
 @SuppressWarnings("deprecation")
 public class Player extends Entity {
 	private static final long serialVersionUID = 1L;
-	private final int speed = 2; // Velocità di movimento in unità logiche
+	private final int speed = 2;
     private PlayerState currentState;
     
     private int hitboxOffsetX = 10 * 2;
@@ -17,39 +21,36 @@ public class Player extends Entity {
     private int hitboxHeight = 28 * 2;
     private Directions facingDirection = RIGHT;
     
- // Nuove variabili per l'hitbox in salto/caduta
-    private int jumpHitboxOffsetX = 10 * 2; // Potresti volerlo uguale a quello normale o leggermente diverso
-    private int jumpHitboxOffsetY = 11 * 2; // Sposta l'hitbox più in basso (dal lato superiore)
-    private int jumpHitboxWidth = 12 * 2;   // Larghezza potrebbe rimanere la stessa
-    private int jumpHitboxHeight = 12 * 2;  // Riduci l'altezza per renderla più piccola sotto e sopra
+    private int jumpHitboxOffsetX = 10 * 2;
+    private int jumpHitboxOffsetY = 11 * 2;
+    private int jumpHitboxWidth = 12 * 2;
+    private int jumpHitboxHeight = 12 * 2;
     
     private float yVelocity = 0;
     private boolean inAir = true;
-    private static final float JUMP_FORCE = -1.7f; //-2.2faaaaa
+    private static final float JUMP_FORCE = -1.7f;
     private static final float MAX_FALL_SPEED = 15f;
     
     private Point initialSpawn;
 
+    /**
+     * Constructs the Player at a given initial spawn point.
+     * @param initialSpawn The starting coordinates.
+     */
     public Player(Point initialSpawn) {
     	super(initialSpawn);
-    	this.x = initialSpawn.x; //- hitboxOffsetX;
-    	this.y = initialSpawn.y; //- 32;
+    	this.x = initialSpawn.x;
+    	this.y = initialSpawn.y;
     	setInitialSpawn(new Point(x, y));
     	this.width = 32 * 2;
     	this.height = 32 * 2;
         this.currentState = PlayerState.IDLE;
-        
         initHitbox();
     }
     
-    public Point getInitialSpawn() {
-    	return this.initialSpawn;
-    }
-    
-    public void setInitialSpawn(Point initialSpawn) {
-    	this.initialSpawn = initialSpawn;
-    }
-    
+    /**
+     * Resets the player to their initial spawn point for the current level.
+     */
     public void resetPosition() {
     	this.x = initialSpawn.x;
     	this.y = initialSpawn.y;
@@ -58,29 +59,11 @@ public class Player extends Entity {
     	notifyObservers();
     }
     
-    public int getSpeed() {
-    	return speed;
-    }
-    
-    public PlayerState getCurrentState() {
-    	return currentState;
-    }
-    
-    public void setDirection(Directions dir) {
-    	this.facingDirection = dir;
-    }
-    
-    public Directions getDirection() {
-    	return this.facingDirection;
-    }
-    
-    // Metodo per inizializzare o aggiornare l'hitbox
     @Override
-    protected void initHitbox() { //float x, float y, int width, int height
+    protected void initHitbox() {
         hitbox = new Rectangle2D.Float(x + hitboxOffsetX, y + hitboxOffsetY, hitboxWidth, hitboxHeight);
     }
     
-    // Metodo per aggiornare la posizione dell'hitbox quando l'entità si muove
     @Override
     protected void updateHitbox() {
     	if(currentState == PlayerState.JUMPING || currentState == PlayerState.FALLING) {
@@ -97,38 +80,20 @@ public class Player extends Entity {
     	}
     }
     
-    // Getter per l'hitbox
-    @Override
-    public Rectangle2D.Float getHitbox() {
-        return hitbox;
-    }
-    
-    // Metodo per cambiare lo stato del player e notificare gli observer
+    /**
+     * Sets the player's state and notifies observers if the state has changed.
+     * @param newState The new {@link PlayerState}.
+     */
     private void setState(PlayerState newState) {
         if (this.currentState != newState) {
             this.currentState = newState;
             updateHitbox();
             setChanged();
-            notifyObservers(); // Notifica ogni volta che lo stato cambia
+            notifyObservers();
         }
     }
 
- // Metodi di movimento aggiornati per gestire lo stato
-    public void moveUp() {
-        y -= speed;
-        setState(PlayerState.JUMPING); // Se ci muoviamo, lo stato è RUNNING
-        updateHitbox();
-        setChanged(); // Notifica anche per l'aggiornamento della posizione
-        notifyObservers();
-    }
-
-	public void moveDown() {
-        y += speed;
-        setState(PlayerState.FALLING);
-        updateHitbox();
-        setChanged();
-        notifyObservers();
-    }
+    // --- MOVEMENT METHODS ---
 
     public void moveLeft() {
         x -= speed;
@@ -149,8 +114,7 @@ public class Player extends Entity {
         setChanged();
         notifyObservers();
     }
-
-    // Nuovo metodo per impostare lo stato su idle
+    
     public void setIdle() {
     	if(!inAir)
     		setState(PlayerState.IDLE);
@@ -160,7 +124,10 @@ public class Player extends Entity {
     	setState(PlayerState.SEARCHING);
     }
     
- // Add gravity application method
+    /**
+     * Applies gravity to the player if they are in the air, updating their vertical velocity and position.
+     * @param gravity The gravitational force to apply.
+     */
     public void applyGravity(float gravity) {
         if (inAir) {
             yVelocity += gravity;
@@ -174,7 +141,9 @@ public class Player extends Entity {
         }
     }
 
-    // Add jump method
+    /**
+     * Makes the player jump if they are on the ground.
+     */
     public void jump() {
         if (!inAir) {
             yVelocity = JUMP_FORCE;
@@ -183,7 +152,10 @@ public class Player extends Entity {
         }
     }
     
-    // Add methods to handle ground contact
+    /**
+     * Called when the player lands on a solid surface.
+     * @param groundY The y-coordinate of the ground surface.
+     */
     public void landOnGround(float groundY) {
         y = (int) (groundY - height);
         yVelocity = 0;
@@ -193,36 +165,39 @@ public class Player extends Entity {
         notifyObservers();
     }
     
+    /**
+     * Moves the player along with a lift.
+     * @param deltaY The vertical distance the lift moved.
+     */
     public void moveWithLift(int deltaY) {
         this.y += deltaY;
         updateHitbox();
         setChanged();
         notifyObservers();
     }
-
-    public boolean isInAir() {
-        return inAir;
-    }
-
-    public float getYVelocity() {
-        return yVelocity;
-    }
-
-	public void setYVelocity(float velocity) {
-		this.yVelocity = velocity;
-	}
-
-	public void setY(float y) {
-		this.y = (int) y;
-	}
-
-	public void setInAir(boolean inAir) {
-		this.inAir = inAir;
-	}
-
+    
+	/**
+     * Instantly moves the player to a new location.
+     * @param x The new x-coordinate.
+     * @param y The new y-coordinate.
+     */
 	public void teleport(int x, int y) {
 		this.x = x;
 		this.y = y;
 		updateHitbox();
 	}
+    
+    // --- GETTERS AND SETTERS ---
+
+    public Point getInitialSpawn() { return this.initialSpawn; }
+    public void setInitialSpawn(Point initialSpawn) { this.initialSpawn = initialSpawn; }
+    public int getSpeed() { return speed; }
+    public PlayerState getCurrentState() { return currentState; }
+    public Directions getDirection() { return this.facingDirection; }
+    public void setDirection(Directions dir) { this.facingDirection = dir; }
+    public boolean isInAir() { return inAir; }
+    public void setInAir(boolean inAir) { this.inAir = inAir; }
+    public float getYVelocity() { return yVelocity; }
+	public void setYVelocity(float velocity) { this.yVelocity = velocity; }
+	public void setY(float y) { this.y = (int) y; }
 }

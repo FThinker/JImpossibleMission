@@ -3,49 +3,41 @@ package controller;
 import java.awt.Point;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
-import java.util.List;
-
 import javax.swing.*;
-
-import model.Level;
-import model.LiftTile;
-import model.PcTile;
-import model.Player;
-import view.ElevatorView;
-import view.GameoverView;
-import view.HUDView;
-import view.LeaderboardView;
-import view.MainGamePanel;
-import view.MainMenuView;
-import view.PausedView;
-import view.PlayingView;
-import view.PopupView;
-import view.ProfileSelectionView;
-import view.StatsView;
-import view.TerminalView;
-import view.VictoryView;
-import model.Elevator;
-import model.GameModel;
-import model.GameSession;
-
+import view.*;
+import model.*;
 import static model.GameConstants.*;
 
+/**
+ * The main entry point for the JImpossibleMission game.
+ * This class is responsible for initializing all core components of the game,
+ * including the model, view, and controller, and setting up the main application window.
+ * It follows the Model-View-Controller (MVC) architectural pattern.
+ */
 public class JImpossibleMission {
+    
+    /**
+     * The main method that starts the application.
+     * It ensures that the GUI is created on the Event Dispatch Thread (EDT) for thread safety.
+     *
+     * @param args Command-line arguments (not used).
+     */
     public static void main(String[] args) {
     	
-        // Assicurati che l'interfaccia utente venga creata sul thread di dispatch degli eventi di Swing
         SwingUtilities.invokeLater(() -> {
         	
-        	// === 1. CREAZIONE DEL MODELLO DATI ===
+        	// 1. MODEL CREATION
+            // Initialize singletons for asset and audio management first.
             AssetLoader.getInstance();
             AudioManager.getInstance();
+            
             Elevator elevator = new Elevator(5, 1);
             Player player = new Player(new Point((int)(LOGIC_WIDTH / 2.24), (int)(LOGIC_HEIGHT / 4.1)));
-            GameSession session = new GameSession(); // Crea la sessione
-            GameModel gameModel = new GameModel(player, elevator, session); // Ora il costruttore è più semplice
+            GameSession session = new GameSession();
+            GameModel gameModel = new GameModel(player, elevator, session);
 
             
-            // === 2. CREAZIONE DI TUTTI GLI HANDLER (CONTROLLER PARZIALI) ===
+            // 2. HANDLERS (PARTIAL CONTROLLERS) CREATION
             InputHandler inputHandler = new InputHandler();
             PopupHandler popupHandler = new PopupHandler();
             TerminalHandler terminalHandler = new TerminalHandler(gameModel, inputHandler);
@@ -58,7 +50,7 @@ public class JImpossibleMission {
             MainMenuHandler mainMenuHandler = new MainMenuHandler(gameModel, inputHandler, profileSelectionHandler, leaderboardHandler);
 
             
-            // === 3. CREAZIONE DI TUTTE LE VIEW ===
+            // 3. VIEWS CREATION
             PlayingView playingView = new PlayingView(gameModel);
             ElevatorView elevatorView = new ElevatorView(gameModel);
             TerminalView terminalView = new TerminalView(terminalHandler);
@@ -73,7 +65,8 @@ public class JImpossibleMission {
             HUDView hudView = new HUDView(gameModel);
 
             
-            // === 4. ASSEMBLAGGIO DELLA VIEW PRINCIPALE ===
+            // 4. MAIN VIEW ASSEMBLY
+            // The MainGamePanel acts as the primary container for all other views.
             MainGamePanel mainGamePanel = new MainGamePanel(
                 gameModel, playingView, elevatorView, terminalView, pausedView,
                 gameoverView, profileSelectionView, mainMenuView, statsView, popupView, 
@@ -81,7 +74,8 @@ public class JImpossibleMission {
             );
 
             
-            // === 5. CREAZIONE DEL CONTROLLER PRINCIPALE ===
+            // 5. MAIN CONTROLLER CREATION
+            // The GameController orchestrates the entire game flow.
             GameController gameController = new GameController(
                 gameModel, mainGamePanel, inputHandler, terminalHandler, pausedHandler,
                 gameoverHandler, profileSelectionHandler, mainMenuHandler, statsHandler, popupHandler, 
@@ -89,7 +83,7 @@ public class JImpossibleMission {
             );
 
             
-            // === 6. CONFIGURAZIONE DELLA FINESTRA (JFrame) ===
+            // 6. WINDOW (JFRAME) CONFIGURATION
             JFrame frame = new JFrame("JImpossibleMission");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setResizable(false);
@@ -97,8 +91,8 @@ public class JImpossibleMission {
             frame.pack();
             frame.setLocationRelativeTo(null);
             
+            // Add a focus listener to handle when the game window loses focus.
             frame.addWindowFocusListener(new WindowFocusListener() {
-
 				@Override
 				public void windowGainedFocus(WindowEvent e) {
 				}
@@ -107,12 +101,10 @@ public class JImpossibleMission {
 				public void windowLostFocus(WindowEvent e) {
 					gameController.gameLostFocus();
 				}
-            	
             });
             
             frame.setVisible(true);
-            mainGamePanel.requestFocusInWindow(); // Assicurati che la View abbia il focus per ricevere input
-            
+            mainGamePanel.requestFocusInWindow(); // Ensure the panel has focus to receive input
         });
     }
 }

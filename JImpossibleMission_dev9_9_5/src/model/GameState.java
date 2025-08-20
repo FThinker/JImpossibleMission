@@ -1,5 +1,9 @@
 package model;
 
+/**
+ * Enumerates the possible high-level states of the game.
+ * The game's behavior changes drastically depending on the current state.
+ */
 public enum GameState {
     PLAYING,
     TERMINAL_OPEN,

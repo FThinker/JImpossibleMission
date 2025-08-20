@@ -1,27 +1,33 @@
 package controller;
 
 import static model.GameConstants.*;
-
 import java.awt.Point;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 import model.Directions;
-import model.GameConstants;
-import model.Level;
 import model.LiftTile;
 import model.Player;
 import model.Tile;
-
 import static model.TileTypes.*;
 
+/**
+ * A utility class containing static methods for handling game physics.
+ * This includes collision detection, movement validation, gravity effects,
+ * and interactions with special tiles like lifts.
+ */
 public class PhysicsHandler {
 
+	/**
+     * Checks if the player can move to a new position without colliding with solid tiles.
+     *
+     * @param player    The player entity.
+     * @param direction The direction of intended movement.
+     * @param lvlData   The 2D array representing the level's tile data.
+     * @return True if the move is possible, false otherwise.
+     */
 	public static boolean canMoveHere(Player player, Directions direction, Tile[][] lvlData) {
 		Rectangle2D.Float hitbox = player.getHitbox();
 		Point upperLeft = new Point((int) hitbox.x, (int) hitbox.y);
@@ -108,43 +114,49 @@ public class PhysicsHandler {
 		return true;
 	}
 
+	/**
+     * Handles vertical collisions for the player, such as landing on the ground or hitting a ceiling.
+     *
+     * @param player  The player entity.
+     * @param lvlData The 2D array representing the level's tile data.
+     */
 	public static void handleVerticalCollisions(Player player, Tile[][] lvlData) {
 		Rectangle2D.Float hitbox = player.getHitbox();
 		float yVelocity = player.getYVelocity();
 
-		// Calculate next position
 		float nextY = hitbox.y + yVelocity;
 		Rectangle2D.Float testHitbox = new Rectangle2D.Float(hitbox.x, nextY, hitbox.width, hitbox.height);
 
-		// Check for collisions
 		for (int row = 0; row < lvlData.length; row++) {
 			for (int col = 0; col < lvlData[0].length; col++) {
 				Tile tile = lvlData[row][col];
 				if (tile.isSolid() && testHitbox.intersects(tile.getHitbox())) {
-					if (yVelocity > 0) {
-						// Falling - land on top
+					if (yVelocity > 0) { // Falling
 						player.landOnGround(tile.getHitbox().y);
-					} else if (yVelocity < 0) {
-						// Hit ceiling
+					} else if (yVelocity < 0) { // Hitting ceiling
 						player.setYVelocity(0);
 						player.setY(tile.getHitbox().y + tile.getHitbox().height);
-//						player.setY((float) (tile.getHitbox().getMaxY() + 1));
 					}
 					return;
 				}
 			}
 		}
 
-		// If no collision found, player is in air
 		if (player.getYVelocity() != 0) {
 			player.setInAir(true);
 		}
 	}
 
-	// Add method to check if on ground
+	/**
+     * Checks if the player is currently standing on a solid tile.
+     *
+     * @param player  The player entity.
+     * @param lvlData The 2D array representing the level's tile data.
+     * @return True if the player is on the ground, false otherwise.
+     */
 	public static boolean isOnGround(Player player, Tile[][] lvlData) {
 		Rectangle2D.Float hitbox = player.getHitbox();
-		Rectangle2D.Float groundCheck = new Rectangle2D.Float(hitbox.x, hitbox.y + 1, // Check 1 pixel below
+		Rectangle2D.Float groundCheck = new Rectangle2D.Float(hitbox.x, hitbox.y + 1,
 				hitbox.width, hitbox.height);
 
 		for (int row = 0; row < lvlData.length; row++) {
@@ -158,9 +170,16 @@ public class PhysicsHandler {
 		return false;
 	}
 
+	/**
+     * Checks if the player is currently standing on a specific lift tile.
+     *
+     * @param player The player entity.
+     * @param lift   The lift tile to check against.
+     * @return True if the player is on the lift, false otherwise.
+     */
 	public static boolean isOnLift(Player player, LiftTile lift) {
 		Rectangle2D.Float hitbox = player.getHitbox();
-		Rectangle2D.Float groundCheck = new Rectangle2D.Float(hitbox.x, hitbox.y + 1, // Check 1 pixel below
+		Rectangle2D.Float groundCheck = new Rectangle2D.Float(hitbox.x, hitbox.y + 1,
 				hitbox.width, hitbox.height);
 
 		if (groundCheck.intersects(lift.getHitbox()))
@@ -169,6 +188,14 @@ public class PhysicsHandler {
 		return false;
 	}
 
+	/**
+     * Determines all possible stopping points for a lift along its vertical path.
+     * A stop is defined as an empty space adjacent to a solid platform.
+     *
+     * @param lift    The lift tile.
+     * @param lvlData The 2D array representing the level's tile data.
+     * @return A sorted list of tiles representing the valid stops for the lift.
+     */
 	public static List<Tile> getLiftStops(Tile lift, Tile[][] lvlData) {
 		int currentRow = (int)(lift.getHitbox().getY() / TILES_DEFAULT_SIZE);
 		int currentCol = (int)(lift.getHitbox().getX() / TILES_DEFAULT_SIZE);
@@ -188,12 +215,10 @@ public class PhysicsHandler {
 			}
 		}
 		
-		// Aggiungi la posizione corrente dell'ascensore come fermata
 		if(lvlData[currentRow][currentCol].getType() == LIFT) {
 			stops.add(lvlData[currentRow][currentCol]);
 		}
 
-		// Assicurati che la posizione originale dell'ascensore sia una fermata
         boolean originalYAsStop = false;
         for (Tile stop : stops) {
             if (stop.getHitbox().y == ((LiftTile)lift).getOriginalY()) {
@@ -202,23 +227,26 @@ public class PhysicsHandler {
             }
         }
         if (!originalYAsStop) {
-            // Crea un tile "fittizio" o usa il tile esistente alla posizione originale se appropriato
-            // Per semplicità, assumiamo che la posizione originale sia un tile EMPTY o LIFT
-            // e lo aggiungiamo se non è già tra le fermate
             int originalRow = ((LiftTile)lift).getOriginalY() / TILES_DEFAULT_SIZE;
             if (originalRow >= 0 && originalRow < lvlData.length && !lvlData[originalRow][currentCol].isSolid()) {
                 stops.add(lvlData[originalRow][currentCol]);
             }
         }
 		
-		// Ordina le fermate per la coordinata Y
         stops.sort((t1, t2) -> Float.compare(t1.getHitbox().y, t2.getHitbox().y));
-
 		return stops;
 	}
 
+	/**
+     * Moves a lift to the next available stop in the specified direction.
+     *
+     * @param lift      The lift to move.
+     * @param direction The direction to move (UP or DOWN).
+     * @param lvlData   The 2D array of level tiles.
+     * @param stops     The pre-calculated list of valid stops for the lift.
+     * @param player    The player entity.
+     */
 	public static void moveLiftToNextStop(LiftTile lift, Directions direction, Tile[][] lvlData, List<Tile> stops, Player player) {
-		// Non muovere l'ascensore se ha già una destinazione
 		if (lift.getTargetY() != -1) {
             return; 
         }
@@ -228,9 +256,7 @@ public class PhysicsHandler {
 		
 		Tile currentStop = lvlData[currentRow][currentCol];
 		
-		// Assicurati che la posizione attuale dell'ascensore sia una fermata valida
         if (!stops.contains(currentStop)) {
-            // Se l'ascensore non è su una fermata, torniamo alla posizione originale
             lift.setTargetY(lift.getOriginalY());
             if (lift.getHitbox().y > lift.getOriginalY()) {
                 lift.setCurrentMovementDirection(Directions.UP);
@@ -244,23 +270,21 @@ public class PhysicsHandler {
 		
 		switch(direction) {
 		case UP:
-			if(currentStopIndex > 0) { // Se non siamo alla prima fermata
+			if(currentStopIndex > 0) {
 				Tile nextStop = stops.get(currentStopIndex - 1);
 				lift.setTargetY((int) nextStop.getHitbox().y);
 				lift.setCurrentMovementDirection(Directions.UP);
 			} else {
-                // Se siamo alla fermata più alta, torna alla posizione originale
                 lift.setTargetY(lift.getOriginalY());
                 lift.setCurrentMovementDirection(Directions.UP);
             }
 			break;
 		case DOWN:
-			if (currentStopIndex < stops.size() - 1) { // Se non siamo all'ultima fermata
+			if (currentStopIndex < stops.size() - 1) {
                 Tile nextStop = stops.get(currentStopIndex + 1);
                 lift.setTargetY((int) nextStop.getHitbox().y);
                 lift.setCurrentMovementDirection(Directions.DOWN);
             } else {
-                // Se siamo alla fermata più bassa, torna alla posizione originale
                 lift.setTargetY(lift.getOriginalY());
                 lift.setCurrentMovementDirection(Directions.DOWN);
             }
@@ -270,6 +294,12 @@ public class PhysicsHandler {
 		}
 	}
 
+	/**
+     * Checks if the player is at the edge of the level, triggering a transition to the elevator.
+     *
+     * @param player The player entity.
+     * @return True if the player is at the far left or far right of the screen, false otherwise.
+     */
 	public static boolean isLeavingLevel(Player player) {
 		if(player.getHitbox().getX() - 1 <= 1)
 			return true;
@@ -278,6 +308,12 @@ public class PhysicsHandler {
 		return false;
 	}
 
+	/**
+     * Checks if the player is at the edge of the elevator screen, triggering a transition to a level.
+     *
+     * @param player The player entity.
+     * @return True if the player is at the far left or far right of the screen, false otherwise.
+     */
 	public static boolean isLeavingElevator(Player player) {
 		 if (player.getHitbox().getX() <= 1)
 			 return true;

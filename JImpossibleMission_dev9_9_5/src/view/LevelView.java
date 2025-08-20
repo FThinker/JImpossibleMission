@@ -5,42 +5,47 @@ import model.Level;
 import model.Tile;
 import model.TileTypes;
 import controller.AssetLoader;
-
 import java.awt.*;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-
 import static model.GameConstants.*;
 import static model.TileTypes.*;
 
+/**
+ * Renders the game level, including all its tiles (walls, platforms, furniture, etc.).
+ * This class iterates through the level data provided by the {@link GameModel} and draws
+ * the corresponding sprite for each tile.
+ */
 public class LevelView {
-    // ✅ CAMBIAMENTO FONDAMENTALE #4: Rimuoviamo il riferimento al modello del livello.
-    // private Level level; 
     
 	private BufferedImage wallTileImg;
 	private BufferedImage platformTileImg;
 	private BufferedImage liftTileImg;
 	private BufferedImage pcTileImg;
 	
+	/**
+     * Constructs a LevelView and pre-loads all necessary tile images.
+     */
 	public LevelView() {
-        // Il costruttore ora carica solo le immagini, non ha bisogno del modello.
 		loadTileImages(); 
 	}
 
+	/**
+     * Loads tile sprites from the {@link AssetLoader}.
+     */
 	private void loadTileImages() {
 		wallTileImg = AssetLoader.getInstance().getImage("wallTile");
 		platformTileImg = AssetLoader.getInstance().getImage("platformTile");
 		liftTileImg = AssetLoader.getInstance().getImage("liftTile");
 		pcTileImg = AssetLoader.getInstance().getImage("pcTile");
-        // ... controlli null ...
 	}
 
 	/**
-	 * Disegna il livello sulla superficie grafica.
-	 * @param g Il contesto grafico su cui disegnare.
-     * @param level L'oggetto Level da disegnare (passato al momento del disegno).
+	 * Draws the entire level onto the screen.
+	 *
+	 * @param g     The Graphics context to draw on.
+     * @param level The current {@link Level} object to be rendered.
 	 */
-	public void draw(Graphics g, Level level) { // ✅ Il livello ora è un parametro
+	public void draw(Graphics g, Level level) {
 		if (level == null)
 			return;
 
@@ -53,7 +58,7 @@ public class LevelView {
                 if (tile.getType() == FURNITURE) {
                     FurnitureTile fTile = (FurnitureTile) tile;
                     if (fTile.isVanished()) {
-                        continue;
+                        continue; // Skip rendering vanished furniture
                     }
                 }
 				
@@ -78,7 +83,6 @@ public class LevelView {
 							.getImage(fTile.getFurnitureType().name().toLowerCase() + "Tile");
 					break;
 				case EMPTY:
-					break;
 				default:
 					break;
 				}
@@ -91,25 +95,8 @@ public class LevelView {
 								(int) (tile.getHitbox().width * SCALE), (int) (tile.getHitbox().height * SCALE), null);
 					else
 						g.drawImage(tileImage, (int) (col * TILES_SIZE), (int) (row * TILES_SIZE), TILES_SIZE, TILES_SIZE, null);
-				} else if (tile.getType() != EMPTY) {
-					g.setColor(Color.MAGENTA);
-					g.fillRect(col * TILES_SIZE, row * TILES_SIZE, TILES_SIZE, TILES_SIZE);
 				}
 			}
 		}
-	}
-	
-    // ... drawHitbox non cambia ...
-	private void drawHitbox(Graphics g, Rectangle2D.Float hitbox, Color c) {
-		Graphics2D g2d = (Graphics2D) g;
-		int width = (int) (hitbox.getMaxX() - hitbox.getMinX());
-		int height = (int) (hitbox.getMaxY() - hitbox.getMinY());
-		g2d.setColor(c); // Colore per la hitbox
-		g2d.setStroke(new BasicStroke(1)); // Linea sottile
-		g2d.drawRect((int) (hitbox.getMinX() * SCALE), (int) (hitbox.getMinY() * SCALE), (int) (width * SCALE),
-				(int) (height * SCALE));
-		g2d.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), 50)); // Colore semitrasparente per riempire
-		g2d.fillRect((int) (hitbox.getMinX() * SCALE), (int) (hitbox.getMinY() * SCALE), (int) (width * SCALE),
-				(int) (height * SCALE));
 	}
 }

@@ -1,43 +1,43 @@
 package model;
 
+/**
+ * Implements the "Turning" state for an enemy's state machine.
+ * In this state, the enemy performs a turn animation over a fixed duration
+ * and then transitions to the next appropriate state based on its behavior.
+ */
 public class TurningState implements EnemyStateHandler {
 
 	@Override
 	public void enter(Enemy enemy) {
 		enemy.setState(EnemyState.TURNING);
-		enemy.turn(); // Deve essere accessibile
+		enemy.turn();
 	}
 
 	@Override
 	public void update(Enemy enemy, EnemyBehavior context, long currentTime, Level levelData, Player player) {
 		long turnDuration = context.getDurationForState(EnemyState.TURNING);
 
-//		if (context.getElapsed(currentTime) >= turnDuration) {
-//			if (context instanceof StandingRobotBehavior) {
-//				StandingRobotBehavior specificContext = (StandingRobotBehavior) context;
-//				specificContext.changeState(new IdleState(), enemy, currentTime);
-//				specificContext.setBehaviorStep(0);
-//			}
-//		}
 		if (context.getElapsed(currentTime) >= turnDuration) {
-            // L'azione di girarsi è finita. Decidiamo cosa fare dopo.
+            // The turn action is complete. Decide what to do next.
             EnemyStateHandler nextState = getNextStateFor(context);
             context.changeState(nextState, enemy, currentTime);
         }
 	}
 	
 	/**
-     * Determina lo stato successivo in base al contesto.
+     * Determines the next state based on the enemy's behavior context.
+     * @param context The behavior context of the enemy.
+     * @return The next state handler for the enemy.
      */
     private EnemyStateHandler getNextStateFor(EnemyBehavior context) {
         if (context instanceof StandingRobotBehavior) {
-            // Dopo essersi girato, lo StandingRobot torna IDLE per ricominciare il ciclo.
+            // After turning, a StandingRobot goes back to Idle to restart its cycle.
             StandingRobotBehavior specificContext = (StandingRobotBehavior) context;
-            specificContext.setBehaviorStep(0); // Resetta la sequenza
+            specificContext.setBehaviorStep(0); // Reset the behavior sequence
             return new IdleState();
         } 
         else if (context instanceof MovingRobotBehavior) {
-            // Dopo essersi girato, il MovingRobot inizia a muoversi nella nuova direzione.
+            // After turning, a MovingRobot starts walking in the new direction.
             return new MovingState();
         }
         
@@ -47,5 +47,6 @@ public class TurningState implements EnemyStateHandler {
 
 	@Override
 	public void exit(Enemy enemy) {
+		// No specific action needed when exiting the turning state.
 	}
 }

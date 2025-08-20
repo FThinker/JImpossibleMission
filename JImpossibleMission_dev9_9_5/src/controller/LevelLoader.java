@@ -6,8 +6,6 @@ import model.EnemyType;
 import model.Level;
 import model.Tile;
 import model.TileFactory;
-import model.TileTypes;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,19 +13,29 @@ import java.io.IOException;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
-
 import static model.GameConstants.*;
 import static model.TileTypes.*;
 
+/**
+ * A utility class for loading game levels from text files.
+ * It parses a character-based representation of a level to create a {@link Level} object,
+ * populating it with tiles, enemies, and the player's spawn point.
+ */
 public class LevelLoader {
 
+    /**
+     * Loads a level from a specified resource file path.
+     * The file should contain a grid of characters, where each character represents a
+     * different type of tile or entity (e.g., '#' for wall, 'P' for player spawn).
+     *
+     * @param levelFilePath The resource path to the level's text file.
+     * @return A new {@link Level} object, or null if the file cannot be read.
+     */
     public static Level loadLevel(String levelFilePath) {
         List<String> rawLevelLines = new ArrayList<>();
         Point playerSpawn = null;
         List<Enemy> enemies = new ArrayList<>();
-        int maxCols = 0; // Per tenere traccia della larghezza massima
-
-        System.out.println("Attempting to load level from: " + levelFilePath);
+        int maxCols = 0;
 
         try (InputStream is = LevelLoader.class.getResourceAsStream(levelFilePath);
              BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
@@ -40,27 +48,23 @@ public class LevelLoader {
             String line;
             int currentRow = 0;
             while ((line = reader.readLine()) != null) {
-                line = line.trim();
                 if (line.isEmpty()) {
-                    continue; // Ignora le righe vuote
+                    continue; // Ignore empty lines
                 }
 
-                // Cerca il punto di spawn del player ('P')
+                // Find the player spawn point ('P')
                 int playerCharIndex = line.indexOf('P');
                 if (playerCharIndex != -1) {
-                    // Imposta il punto di spawn in coordinate pixel
-//                	System.out.println("Found player spawn at: " + playerCharIndex + " | " + currentRow);
                 	int initialX = (playerCharIndex * TILES_DEFAULT_SIZE);
                 	int centerOffsetX = (TILES_DEFAULT_SIZE - 12*2) / 2;
                 	int hbOffsetX = 10 * 2;
-//                    playerSpawn = new Point(centerX + offsetX, currentRow * TILES_DEFAULT_SIZE - 32);
                 	playerSpawn = new Point(initialX - hbOffsetX + centerOffsetX, currentRow * TILES_DEFAULT_SIZE - 32);
-                    // Rimuovi 'P' dalla riga per la successiva elaborazione dei tile
+                    // Replace 'P' with a space to process it as an empty tile
                     line = line.replace('P', ' ');
                 }
 
                 rawLevelLines.add(line);
-                maxCols = Math.max(maxCols, line.length()); // Aggiorna la larghezza massima
+                maxCols = Math.max(maxCols, line.length());
                 currentRow++;
             }
 
@@ -76,73 +80,68 @@ public class LevelLoader {
         }
 
         int numRows = rawLevelLines.size();
-        // Usa maxCols per assicurare che la matrice abbia la larghezza massima trovata
         int numCols = maxCols;
         Tile[][] levelData = new Tile[numRows][numCols];
 
-        // Converte i caratteri letti in valori numerici per la matrice del livello
+        // Convert the character grid into a 2D array of Tile objects
         for (int r = 0; r < numRows; r++) {
             String line = rawLevelLines.get(r);
             for (int c = 0; c < numCols; c++) {
-                if (c < line.length()) { // Assicurati di non andare fuori dai limiti della riga attuale
+                if (c < line.length()) {
                     char tileChar = line.charAt(c);
                     switch (tileChar) {
-                        case '#': // Wall
+                        case '#':
                             levelData[r][c] = TileFactory.getTile(WALL, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE);
                             break;
-                        case '=': // Platform
+                        case '=':
                             levelData[r][c] = TileFactory.getTile(PLATFORM, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE);
                             break;
-                        case 'L': // Lift
+                        case 'L':
                         	levelData[r][c] =TileFactory.getTile(LIFT, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE);
                         	break;
-                        case 'E':
-                        case ' ': // Empty tile
+                        case 'E': // 'E' is used as a redundant character for empty space in level doors
+                        case ' ':
                             levelData[r][c] = TileFactory.getTile(EMPTY, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE);
                             break;
-                        case 'T': // PC
+                        case 'T':
                         	levelData[r][c] = TileFactory.getTile(PC, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE);
                         	break;
-                        case 'O': // Furniture
+                        case 'O':
                         	levelData[r][c] = TileFactory.getTile(FURNITURE, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE);
                         	break;
-                        case 'R': // Robot
+                        case 'R': // Standing Robot
                         	levelData[r][c] = TileFactory.getTile(EMPTY, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE);
-                        	// Centering Enemy
                         	int x = (c * TILES_DEFAULT_SIZE);
                         	int centerOffset = (TILES_DEFAULT_SIZE - 14*2) / 2;
                         	enemies.add(EnemyFactory.createEnemy(EnemyType.STANDING_ROBOT, x + centerOffset, r * TILES_DEFAULT_SIZE));
                         	break;
                         case 'M': // Moving Robot
                         	levelData[r][c] = TileFactory.getTile(EMPTY, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE);
-                        	// Centering Enemy
                         	int xM = (c * TILES_DEFAULT_SIZE);
                         	int centerOffsetM = (TILES_DEFAULT_SIZE - 14*2) / 2;
                         	enemies.add(EnemyFactory.createEnemy(EnemyType.MOVING_ROBOT, xM + centerOffsetM, r * TILES_DEFAULT_SIZE));
                         	break;
                         default:
                             System.err.println("Unknown character in level file: '" + tileChar + "' at row " + r + ", col " + c + ". Treating as EMPTY.");
-                            levelData[r][c] = TileFactory.getTile(EMPTY, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE); // Fallback to empty for unknown characters
+                            levelData[r][c] = TileFactory.getTile(EMPTY, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE);
                             break;
                     }
                 } else {
-                    // Se la riga è più corta di maxCols, riempi con EMPTY
+                    // If the line is shorter than maxCols, fill the rest with empty tiles
                     levelData[r][c] = TileFactory.getTile(EMPTY, c * TILES_DEFAULT_SIZE, r * TILES_DEFAULT_SIZE);
                 }
             }
         }
 
-        // Se il punto di spawn non è stato trovato, usa un default o segnala un errore critico
         if (playerSpawn == null) {
             System.err.println("Warning: Player spawn point 'P' not found in level file. Using default (0,0).");
-            playerSpawn = new Point(0, 0); // Default spawn
+            playerSpawn = new Point(0, 0);
         }
         
-        if (enemies.size() <= 0) {
+        if (enemies.isEmpty()) {
         	System.err.println("Warning: No enemies found in level file.");
         }
 
-        // Crea e restituisci il nuovo oggetto Level
         return new Level(levelData, playerSpawn, enemies);
     }
 }

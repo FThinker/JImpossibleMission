@@ -1,9 +1,12 @@
 package model;
 
 import static model.TileTypes.PC;
-
 import java.awt.geom.Rectangle2D;
 
+/**
+ * Represents an interactable computer terminal (PC) tile in the game.
+ * It is a non-solid tile that the player can interact with to open a terminal screen.
+ */
 public class PcTile extends Tile {
 	private static final long serialVersionUID = 1L;
 	private int width = (int) (32 * 2);
@@ -18,7 +21,6 @@ public class PcTile extends Tile {
 	@Override
 	protected void initHitbox() {
 		hitbox = new Rectangle2D.Float(x, y, width, height);
-
 	}
 
 	@Override

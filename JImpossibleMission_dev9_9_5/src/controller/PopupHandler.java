@@ -1,43 +1,54 @@
-// PopupHandler.java (Modificato)
 package controller;
 
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Observable; // Importa Observable
+import java.util.Observable;
 import model.FurnitureTile;
 
+/**
+ * Manages the state and logic for in-game popups, such as search progress bars and notifications.
+ * It extends {@link Observable} to notify the {@link view.PopupView} when its state changes.
+ */
 @SuppressWarnings("deprecation")
-public class PopupHandler extends Observable { // Estende Observable
+public class PopupHandler extends Observable {
 
     private String popupText = "";
     private float searchProgress = 0.0f;
     private boolean isSearchingPopup = false;
     private Timer popupTimer;
     
-    // Riferimento al tile di arredamento che sta venendo cercato
     private FurnitureTile currentFurniture = null;
 
+    /**
+     * Shows a popup indicating that a search is in progress on a piece of furniture.
+     *
+     * @param furniture The {@link FurnitureTile} being searched.
+     */
     public void showSearchPopup(FurnitureTile furniture) {
         isSearchingPopup = true;
         this.currentFurniture = furniture;
         this.popupText = "Searching...";
         
-        // NUOVO: Notifica gli observer che il popup deve essere mostrato
         setChanged();
         notifyObservers();
     }
 
+    /**
+     * Shows a temporary notification popup (e.g., "Piece found!").
+     *
+     * @param furniture The related furniture tile (for positioning).
+     * @param text The text to display in the notification.
+     * @param durationMillis The duration in milliseconds for which to show the popup.
+     */
     public void showNotificationPopup(FurnitureTile furniture, String text, int durationMillis) {
         isSearchingPopup = false;
         this.currentFurniture = furniture;
         this.popupText = text;
         this.searchProgress = 0.0f;
         
-        // Notifica subito per mostrare il popup
         setChanged();
         notifyObservers();
         
-        // Mostra il pop-up per un certo periodo di tempo
         if (popupTimer != null) {
             popupTimer.cancel();
         }
@@ -50,23 +61,25 @@ public class PopupHandler extends Observable { // Estende Observable
         }, durationMillis);
     }
 
+    /**
+     * Hides the currently active popup and resets its state.
+     */
     public void hidePopup() {
         popupText = "";
         isSearchingPopup = false;
         searchProgress = 0.0f;
         currentFurniture = null;
         
-        // NUOVO: Notifica gli observer che il popup deve essere nascosto
         setChanged();
         notifyObservers();
     }
     
-    // Metodo chiamato dal GameController ad ogni tick
+    /**
+     * Updates the search progress based on the current furniture being searched.
+     * This method is called repeatedly by the main game loop.
+     */
     public void updateSearchProgress() {
         if (isSearchingPopup && currentFurniture != null) {
-            // Nota: qui non notifichiamo ad ogni tick per evitare repaint eccessivi.
-            // Il repaint verrà gestito dalla notifica del GameModel o da una
-            // notifica del furniture tile stesso se cambia il suo progresso.
             this.searchProgress = currentFurniture.getSearchProgress();
         }
     }

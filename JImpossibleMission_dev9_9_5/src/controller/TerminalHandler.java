@@ -1,45 +1,58 @@
 package controller;
 
-import model.GameModel; // Necessario per accedere al GameModel
+import model.GameModel;
 import model.GameState;
+import java.awt.event.KeyEvent;
 
-import java.awt.event.KeyEvent; // Per gestire l'input da tastiera
-
+/**
+ * Handles user input and logic for the in-game terminal screen.
+ * This class processes keyboard inputs to execute terminal commands, such as
+ * resetting lifts or disabling enemies, and provides the text to be displayed.
+ */
 public class TerminalHandler {
 
     private GameModel gameModel;
-    private InputHandler inputHandler; // Per leggere l'input
+    private InputHandler inputHandler;
 
+    /**
+     * Constructs a TerminalHandler.
+     *
+     * @param gameModel    The main game model to interact with.
+     * @param inputHandler The handler for detecting keyboard input.
+     */
     public TerminalHandler(GameModel gameModel, InputHandler inputHandler) {
         this.gameModel = gameModel;
         this.inputHandler = inputHandler;
     }
 
+    /**
+     * Handles keyboard input when the terminal is open.
+     * Listens for specific keys (1, 2, Escape, etc.) to trigger actions.
+     */
     public void handleTerminalInput() {
         if (inputHandler.isKeyPressed(KeyEvent.VK_1)) {
-            System.out.println("Opzione 1 selezionata: Resetting Lifts");
-            AudioManager.getInstance().play("keystroke");
             gameModel.resetAllLiftsPosition();
-            inputHandler.resetKeys(); // Resetta i tasti per evitare input multipli
-            gameModel.setGameState(GameState.PLAYING); // Torna al gioco normale
+            AudioManager.getInstance().play("keystroke");
+            inputHandler.resetKeys();
+            gameModel.setGameState(GameState.PLAYING);
         } else if (inputHandler.isKeyPressed(KeyEvent.VK_2)) {
-            System.out.println("Opzione 2 selezionata: Freezing Enemies");
+            gameModel.freezeEnemies(15); // Freeze for 15 seconds
             AudioManager.getInstance().play("keystroke");
-            gameModel.freezeEnemies(15); // Congela per 15 secondi
             inputHandler.resetKeys();
-            gameModel.setGameState(GameState.PLAYING); // Torna al gioco normale
+            gameModel.setGameState(GameState.PLAYING);
         } else if (inputHandler.isKeyPressed(KeyEvent.VK_ESCAPE) || inputHandler.isKeyPressed(KeyEvent.VK_Q) || inputHandler.isKeyPressed(KeyEvent.VK_ENTER)) {
-            // Usa ESC o INVIO per fare il "Log Off"
-            System.out.println("Log Off dal terminale.");
             AudioManager.getInstance().play("keystroke");
             inputHandler.resetKeys();
-            gameModel.setGameState(GameState.PLAYING); // Torna al gioco normale
+            gameModel.setGameState(GameState.PLAYING);
         }
     }
 
-    // Metodi per ottenere le informazioni da disegnare nel terminale (la View li userà)
+    /**
+     * Generates the text to be displayed on the terminal screen.
+     *
+     * @return A formatted string with the terminal's content and options.
+     */
     public String getTerminalText() {
-        // Qui puoi costruire il testo da mostrare nel terminale
         return "*** SECURITY TERMINAL " + generateTerminalAlias() + " ***\n" +
                "> SELECT FUNCTION\n\n" +
                "> 1 - RESET LIFTING PLATFORMS IN THIS ROOM.\n" +
@@ -47,8 +60,12 @@ public class TerminalHandler {
                "> ==> LOG OFF. (Press ESC, Q or Enter)";
     }
     
+    /**
+     * Generates a pseudo-unique alias for the current terminal based on level properties.
+     * @return A string representing the terminal's ID.
+     */
     private String generateTerminalAlias() {
-    	// poor man's hash function
+    	// Poor man's hash function
     	int id = gameModel.getLevel().getLifts().size() * (int)gameModel.getLevel().getPlayerSpawn().getX() 
     			+ gameModel.getLevel().getPcs().size() * (int)gameModel.getLevel().getPlayerSpawn().getY();
     	String prefix = "" + gameModel.getLevel().getLevelData()[5][9].getType().name().charAt(0)

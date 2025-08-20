@@ -1,17 +1,20 @@
-// In model/UserProfile.java
 package model;
 
 import java.io.Serializable;
 import java.util.Objects;
 
+/**
+ * Represents a user's profile, storing all their progress and statistics.
+ * This class is serializable to allow for saving and loading player data to/from disk.
+ * It tracks game stats, level progression, and experience points (XP).
+ */
 public class UserProfile implements Serializable {
-    // Per la serializzazione, è una buona pratica
     private static final long serialVersionUID = 1L;
 
     private String nickname;
-    private String avatarId; // Per ora un ID, in futuro potresti mappare ID a immagini
+    private String avatarId;
 
-    // Statistiche
+    // Statistics
     private int gamesPlayed = 0;
     private int gamesWon = 0;
     private int gamesLost = 0;
@@ -20,21 +23,35 @@ public class UserProfile implements Serializable {
     private int level = 1;
     private long currentXp = 0;
 
-    // Costanti per la formula del level up
+    // Constants for the level-up formula
     private static final long BASE_XP_THRESHOLD = 2000;
     private static final double LEVEL_UP_MULTIPLIER = 1.5;
 
+    /**
+     * Constructs a new UserProfile.
+     * @param nickname The user's unique nickname.
+     * @param avatarId The ID of the user's chosen avatar.
+     */
     public UserProfile(String nickname, String avatarId) {
         this.nickname = nickname;
-        this.avatarId = avatarId; // Avatar di default
+        this.avatarId = avatarId;
     }
     
-    public String getAvatarId() { return avatarId; }
-
+    /**
+     * Called when the user starts a new game session.
+     * @param newGame The new game session being started.
+     */
     public void startGame(GameSession newGame) {
         this.gamesPlayed++;
     }
 
+    /**
+     * Called at the end of a game to update the user's statistics and XP.
+     * @param won True if the game was won, false otherwise.
+     * @param score The score achieved in the game.
+     * @param playtimeMs The duration of the game in milliseconds.
+     * @param xpGained The amount of XP earned.
+     */
     public void endGame(boolean won, long score, long playtimeMs, long xpGained) {
         if (won) {
             this.gamesWon++;
@@ -42,45 +59,40 @@ public class UserProfile implements Serializable {
             this.gamesLost++;
         }
         this.totalScore += score;
-        this.totalPlaytimeMs += playtimeMs; // Aggiorna il tempo totale
+        this.totalPlaytimeMs += playtimeMs;
         this.currentXp += xpGained;
         
-        // Controlla se il giocatore sale di livello (potrebbe salire più volte)
+        // Check for level ups (a user can level up multiple times at once)
         while (this.currentXp >= getXpForNextLevel()) {
-            this.currentXp -= getXpForNextLevel(); // Sottrai il costo del livello
-            this.level++; // Aumenta il livello
-            System.out.println(nickname + " è salito al livello " + this.level + "!");
+            this.currentXp -= getXpForNextLevel();
+            this.level++;
         }
     }
     
-    
-    // Getters e Setters
-    public String getNickname() { return nickname; }
-    public int getGamesPlayed() { return gamesPlayed; }
-    public int getGamesWon() { return gamesWon; }
-    public int getGamesLost() { return gamesLost; }
-    public long getTotalScore() { return totalScore; }
-    public double getAverageScore() {
-        return (gamesPlayed == 0) ? 0 : (double) totalScore / gamesPlayed;
-    }
-    public long getTotalPlaytimeMs() { return totalPlaytimeMs; }
-
-    public int getLevel() {
-        return level;
-    }
-
-    public long getCurrentXp() {
-        return currentXp;
-    }
-
     /**
-     * Calcola l'XP necessario per il prossimo livello usando la progressione geometrica.
+     * Calculates the XP required to reach the next level using a geometric progression.
+     * @return The total XP needed for the next level-up.
      */
     public long getXpForNextLevel() {
         return (long) (BASE_XP_THRESHOLD * Math.pow(LEVEL_UP_MULTIPLIER, this.level - 1));
     }
     
-    // Necessari per confronti e per evitare duplicati
+    // --- GETTERS AND SETTERS ---
+
+    public String getNickname() { return nickname; }
+    public String getAvatarId() { return avatarId; }
+    public int getGamesPlayed() { return gamesPlayed; }
+    public int getGamesWon() { return gamesWon; }
+    public int getGamesLost() { return gamesLost; }
+    public long getTotalScore() { return totalScore; }
+    public long getTotalPlaytimeMs() { return totalPlaytimeMs; }
+    public int getLevel() { return level; }
+    public long getCurrentXp() { return currentXp; }
+    
+    public double getAverageScore() {
+        return (gamesPlayed == 0) ? 0 : (double) totalScore / gamesPlayed;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

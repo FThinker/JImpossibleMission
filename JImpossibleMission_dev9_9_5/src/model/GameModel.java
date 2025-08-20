@@ -1,14 +1,20 @@
 package model;
 
-import static model.GameConstants.LOGIC_HEIGHT;
 import static model.GameConstants.LOGIC_WIDTH;
-
+import static model.GameConstants.LOGIC_HEIGHT;
 import java.awt.Point;
 import java.util.List;
-import java.util.Observable; // Sarà osservato dalla View
-
+import java.util.Observable;
 import controller.AudioManager;
 
+
+/**
+ * The central data model for the entire game.
+ * It holds the state of all major game components, including the player, elevator,
+ * current level, and active game session. It acts as the "single source of truth".
+ * It extends {@link Observable} and notifies its observers (typically the main view)
+ * whenever the game state changes.
+ */
 @SuppressWarnings("deprecation")
 public class GameModel extends Observable {
     private Player player;
@@ -16,42 +22,33 @@ public class GameModel extends Observable {
     private Level level;
     private GameState gameState;
     private UserProfile activeProfile;
-    
-    // Variabili per il pop-up a nuvoletta
-    private String popupMessage = null; // Il testo del messaggio da mostrare
-    private float popupDisplayTime = 0; // Tempo rimanente di visualizzazione
-    private final float POPUP_DURATION = 2.0f; // Durata del pop-up in secondi
-    private FurnitureTile currentSearchingFurniture = null; // Riferimento al mobile in cui si sta cercando
 
-    // Riferimento alla sessione di gioco corrente
     private GameSession currentGameSession; 
-
     private long lastScore = 0;
-    
     private GameState stateBeforePause;
-    
     private int currentFps = 0;
     
+    
+    /**
+     * Constructs the main game model.
+     * @param player The player entity.
+     * @param elevator The elevator entity.
+     * @param session The initial game session object.
+     */
     public GameModel(Player player, Elevator elevator, GameSession session) {
         this.player = player;
         this.level = null;
         this.elevator = elevator;
-        this.gameState = GameState.PROFILE_SELECTION; // Stato iniziale
+        this.gameState = GameState.PROFILE_SELECTION;
         this.activeProfile = null;
         
         AudioManager.getInstance().loopMenuMusic("menu_theme");
     }
     
-    public void setActiveProfile(UserProfile profile) {
-        this.activeProfile = profile;
-        setChanged();
-        notifyObservers();
-    }
-
-    public UserProfile getActiveProfile() {
-        return this.activeProfile;
-    }
-
+    /**
+     * Starts a new game for the currently active profile.
+     * This creates a new {@link GameSession} and sets the game state to IN_ELEVATOR.
+     */
     public void startNewGame() {
         if (activeProfile != null) {
         	AudioManager.getInstance().stopMenuMusic();
@@ -59,11 +56,14 @@ public class GameModel extends Observable {
             GameSession newSession = new GameSession();
             activeProfile.startGame(newSession);
             this.currentGameSession = newSession;
-            setGameState(GameState.IN_ELEVATOR); // Si parte dall'ascensore
+            setGameState(GameState.IN_ELEVATOR);
         }
     }
     
-    // Per entrare in una stanza dall'ascensore
+    /**
+     * Transitions the player from the elevator into a specific room (level).
+     * @param lvlNumber The number of the level to enter.
+     */
     public void enterRoom(int lvlNumber) {
     	if (gameState == GameState.IN_ELEVATOR) {
             this.level = currentGameSession.getLevel(lvlNumber);
@@ -76,11 +76,15 @@ public class GameModel extends Observable {
                 AudioManager.getInstance().play("woosh");
                 this.currentGameSession.updatePlayerLocation(GameState.PLAYING, this.level);
             } else {
-                System.err.println("Errore: Impossibile caricare il livello " + lvlNumber);
+                System.err.println("Error: Could not load level " + lvlNumber);
             }
         }
     }
     
+    /**
+     * Transitions the player from a room back into the elevator.
+     * @param direction The direction the player is exiting from.
+     */
     public void exitRoom(Directions direction) {
         if (gameState == GameState.PLAYING) {
         	this.currentGameSession.updatePlayerLocation(GameState.IN_ELEVATOR, null);
@@ -96,11 +100,9 @@ public class GameModel extends Observable {
         }
     }
     
- // MODIFICA: I metodi ora delegano alla GameSession
-    public int getPuzzlePiecesFound() {
-        return currentGameSession.getPuzzlePiecesFound();
-    }
-    
+    /**
+     * Adds a puzzle piece to the current session's inventory.
+     */
     public void addPuzzlePiece() {
         currentGameSession.addPuzzlePiece();
         AudioManager.getInstance().play("piece_found");
@@ -108,10 +110,9 @@ public class GameModel extends Observable {
         notifyObservers();
     }
     
-    public int getLives() {
-        return currentGameSession.getLives();
-    }
-    
+    /**
+     * Decrements a life from the current session and resets player/enemy positions.
+     */
     public void loseLife() {
         currentGameSession.loseLife();
         resetAllEnemiesPosition();
@@ -123,61 +124,28 @@ public class GameModel extends Observable {
         notifyObservers();
     }
     
-    public Elevator getElevator() {
-    	return this.elevator;
-    }
-
-    public Player getPlayer() {
-        return player;
-    }
-
-    public Level getLevel() {
-        return level;
-    }
-
-    public List<LiftTile> getLifts() {
-        if (level != null) return level.getLifts();
-        return java.util.Collections.emptyList(); // Ritorna una lista vuota se non c'è un livello
-    }
-    
-    public List<PcTile> getPcTiles() {
-    	if (level != null) return level.getPcs();
-        return java.util.Collections.emptyList();
-    }
-    
-    public List<FurnitureTile> getFurnitureTiles() {
-		if (level != null) return level.getFurniture();
-        return java.util.Collections.emptyList();
-	}
-    
-    public List<Enemy> getEnemies(){
-    	if (level != null) return level.getEnemies();
-        return java.util.Collections.emptyList();
-    }
-
-    public GameState getGameState() {
-        return gameState;
-    }
-
-    public void setGameState(GameState gameState) {
-        this.gameState = gameState;
-        setChanged();
-        notifyObservers(); // Notifica la View del cambio di stato
-    }
-    
-    // Metodo per resettare la posizione di tutti i lift
+    /**
+     * Resets the positions of all lifts in the current level to their starting points.
+     */
     public void resetAllLiftsPosition() {
     	for (LiftTile lift : level.getLifts()) {
     		lift.resetPosition();
     	}
     }
     
+    /**
+     * Resets the positions of all enemies in the current level to their starting points.
+     */
     public void resetAllEnemiesPosition() {
     	for (Enemy enemy : level.getEnemies()) {
     		enemy.resetPosition();
     	}
     }
     
+    /**
+     * Freezes all enemies in the current level for a specified duration.
+     * @param durationSec The duration of the freeze in seconds.
+     */
     public void freezeEnemies(long durationSec) {
         if (this.level != null) {
             this.level.freezeEnemies(durationSec);
@@ -187,59 +155,37 @@ public class GameModel extends Observable {
         }
     }
     
- // NUOVI GETTER E SETTER per la logica dei pop-up
-    public String getPopupMessage() {
-        return popupMessage;
-    }
+// --- GETTERS AND SETTERS ---
     
-    public void setPopupMessage(String message) {
-        this.popupMessage = message;
-        this.popupDisplayTime = POPUP_DURATION; // Avvia il timer del pop-up
-        setChanged();
-        notifyObservers();
-    }
-    
-    public void updatePopupTimer(float delta) {
-        if (popupDisplayTime > 0) {
-            popupDisplayTime -= delta;
-            if (popupDisplayTime <= 0) {
-                popupMessage = null; // Rimuovi il messaggio
-                setChanged();
-                notifyObservers();
-            }
-        }
-    }
-    
-    public FurnitureTile getCurrentSearchingFurniture() {
-        return currentSearchingFurniture;
-    }
-    
-    public void setCurrentSearchingFurniture(FurnitureTile furniture) {
-        this.currentSearchingFurniture = furniture;
+    public void setActiveProfile(UserProfile profile) {
+        this.activeProfile = profile;
         setChanged();
         notifyObservers();
     }
 
-	public GameSession getCurrentGameSession() {
-		return this.currentGameSession;
-	}
-	
-    public void setStateBeforePause(GameState state) {
-        this.stateBeforePause = state;
-    }
-
-    public GameState getStateBeforePause() {
-        return this.stateBeforePause;
-    }
-    
-    public void setCurrentFps(int fps) {
-        this.currentFps = fps;
-    }
-
-    public int getCurrentFps() {
-        return this.currentFps;
-    }
-    
-    public void setLastScore(long score) { this.lastScore = score; }
+    public UserProfile getActiveProfile() { return this.activeProfile; }
+    public int getPuzzlePiecesFound() { return currentGameSession.getPuzzlePiecesFound(); }
+    public int getLives() { return currentGameSession.getLives(); }
+    public Elevator getElevator() { return this.elevator; }
+    public Player getPlayer() { return player; }
+    public Level getLevel() { return level; }
+    public List<LiftTile> getLifts() { return (level != null) ? level.getLifts() : java.util.Collections.emptyList(); }
+    public List<PcTile> getPcTiles() { return (level != null) ? level.getPcs() : java.util.Collections.emptyList(); }
+    public List<FurnitureTile> getFurnitureTiles() { return (level != null) ? level.getFurniture() : java.util.Collections.emptyList(); }
+    public List<Enemy> getEnemies(){ return (level != null) ? level.getEnemies() : java.util.Collections.emptyList(); }
+    public GameState getGameState() { return gameState; }
+    public GameSession getCurrentGameSession() { return this.currentGameSession; }
+    public GameState getStateBeforePause() { return this.stateBeforePause; }
+    public int getCurrentFps() { return this.currentFps; }
     public long getLastScore() { return this.lastScore; }
+    
+    public void setGameState(GameState gameState) {
+        this.gameState = gameState;
+        setChanged();
+        notifyObservers();
+    }
+    
+    public void setStateBeforePause(GameState state) { this.stateBeforePause = state; }
+    public void setCurrentFps(int fps) { this.currentFps = fps; }
+    public void setLastScore(long score) { this.lastScore = score; }
 }

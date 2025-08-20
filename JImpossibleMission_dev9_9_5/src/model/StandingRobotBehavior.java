@@ -1,5 +1,11 @@
 package model;
 
+/**
+ * Implements the behavior context for a {@link StandingRobot}.
+ * This class manages the state machine for the stationary robot, defining a fixed cycle
+ * of idling, attacking, idling again, and then turning. A `behaviorStep` variable
+ * is used to track the current position in this sequence.
+ */
 public class StandingRobotBehavior implements EnemyBehavior {
 
     private EnemyStateHandler currentState;
@@ -21,6 +27,7 @@ public class StandingRobotBehavior implements EnemyBehavior {
         currentState.update(enemy, this, currentTime, levelData, player);
     }
 
+    @Override
     public void changeState(EnemyStateHandler newState, Enemy enemy, long currentTime) {
         currentState.exit(enemy);
         currentState = newState;
@@ -28,16 +35,9 @@ public class StandingRobotBehavior implements EnemyBehavior {
         stateStartTime = currentTime;
     }
 
+    @Override
     public long getElapsed(long currentTime) {
         return currentTime - stateStartTime;
-    }
-
-    public int getBehaviorStep() {
-        return behaviorStep;
-    }
-
-    public void setBehaviorStep(int step) {
-        this.behaviorStep = step;
     }
     
     @Override
@@ -58,5 +58,13 @@ public class StandingRobotBehavior implements EnemyBehavior {
     @Override
     public void resetBehavior(Enemy enemy) {
     	changeState(new IdleState(), enemy, System.currentTimeMillis());
+    }
+    
+    public int getBehaviorStep() {
+        return behaviorStep;
+    }
+
+    public void setBehaviorStep(int step) {
+        this.behaviorStep = step;
     }
 }

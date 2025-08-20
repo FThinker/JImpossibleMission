@@ -2,9 +2,13 @@ package model;
 
 import static model.TileTypes.FURNITURE;
 import static model.FurnitureType.randomType;
-
 import java.awt.geom.Rectangle2D;
 
+/**
+ * Represents an interactable piece of furniture in the game world.
+ * Furniture can be searched by the player, may contain a puzzle piece,
+ * and can "vanish" after being searched.
+ */
 @SuppressWarnings("deprecation")
 public class FurnitureTile extends Tile {
 	private static final long serialVersionUID = 1L;
@@ -12,26 +16,50 @@ public class FurnitureTile extends Tile {
 	private final FurnitureType type;
     private boolean hasPuzzlePiece = false;
     private boolean isSearching = false;
-    private float searchProgress = 0; // 0.0 - 1.0 (0% - 100%)
-    private final float searchTimeRequired = 3.0f;
+    private float searchProgress = 0; // Progress from 0.0 to 1.0
+    private final float searchTimeRequired = 3.0f; // Time in seconds
     private boolean isVanished = false;
     
+    /**
+     * Constructs a FurnitureTile at a given position with a random furniture type.
+     * @param x The x-coordinate of the tile.
+     * @param y The y-coordinate of the tile.
+     */
     public FurnitureTile(int x, int y) {
         super(x, y);
         this.type = randomType();
-//        this.x = x + type.getOffsetX();
-//        this.y = y + type.getOffsetY();
         solid = false;
         initHitbox();
     }
 
     @Override
     protected void initHitbox() {
-        // Usa le dimensioni del tipo di arredamento per l'hitbox
         hitbox = new Rectangle2D.Float(x + type.getOffsetX(), y + type.getOffsetY(), type.getWidth(), type.getHeight());
     }
     
-    // Getter per il tipo di arredamento
+    /**
+     * Updates the search progress over time.
+     * @param delta The time elapsed since the last frame, in seconds.
+     */
+    public void updateSearchProgress(float delta) {
+        if (isSearching) {
+            searchProgress += delta;
+            setChanged();
+            notifyObservers();
+        }
+    }
+    
+    /**
+     * Makes the furniture tile disappear from the game.
+     */
+    public void vanish() {
+        this.isVanished = true;
+        setChanged();
+        notifyObservers();
+    }
+    
+    // --- GETTERS AND SETTERS ---
+
     public FurnitureType getFurnitureType() {
         return type;
     }
@@ -51,7 +79,7 @@ public class FurnitureTile extends Tile {
     public void setSearching(boolean searching) {
         isSearching = searching;
         if (!searching) {
-            searchProgress = 0; // Resetta il progresso quando si smette di cercare
+            searchProgress = 0; // Reset progress when searching stops
         }
     }
 
@@ -62,17 +90,11 @@ public class FurnitureTile extends Tile {
     public float getSearchTimeRequired() {
         return searchTimeRequired;
     }
-    
-    // Metodo per aggiornare il progresso di ricerca
-    public void updateSearchProgress(float delta) {
-        if (isSearching) {
-            searchProgress += delta;
-            // Notifica gli observer (GameController/View) del progresso
-            setChanged();
-            notifyObservers();
-        }
+
+    public boolean isVanished() {
+        return isVanished;
     }
-    
+
     @Override
     public Rectangle2D.Float getHitbox() {
         return hitbox;
@@ -87,19 +109,4 @@ public class FurnitureTile extends Tile {
     public TileTypes getType() {
         return FURNITURE;
     }
-    
-    // NUOVO: Metodo per far sparire il mobile
-    public void vanish() {
-        this.isVanished = true;
-        
-        // Notifichiamo gli observer (la View) che il suo stato è cambiato
-        setChanged();
-        notifyObservers();
-    }
-    
-    // NUOVO: Getter per lo stato di sparizione
-    public boolean isVanished() {
-        return isVanished;
-    }
-
 }

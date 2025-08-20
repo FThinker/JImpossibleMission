@@ -12,7 +12,7 @@ import static model.TileTypes.*;
 
 /**
  * Renders the game level, including all its tiles (walls, platforms, furniture, etc.).
- * This class iterates through the level data provided by the {@link GameModel} and draws
+ * This class iterates through the level data provided by the {@link model.GameModel} and draws
  * the corresponding sprite for each tile.
  */
 public class LevelView {

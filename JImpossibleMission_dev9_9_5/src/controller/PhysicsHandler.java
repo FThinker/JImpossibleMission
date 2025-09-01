@@ -30,20 +30,24 @@ public class PhysicsHandler {
      */
 	public static boolean canMoveHere(Player player, Directions direction, Tile[][] lvlData) {
 		Rectangle2D.Float hitbox = player.getHitbox();
-		Point upperLeft = new Point((int) hitbox.x, (int) hitbox.y);
-		Point upperRight = new Point((int) (hitbox.x + hitbox.width), (int) hitbox.y);
-		Point halfLeft = new Point((int) hitbox.x, (int) (hitbox.y + (hitbox.height / 2)));
-		Point halfRight = new Point((int) (hitbox.x + hitbox.width), (int) (hitbox.y + (hitbox.height / 2)));
-		Point lowerLeft = new Point((int) hitbox.x, (int) (hitbox.y + hitbox.height));
-		Point lowerRight = new Point((int) (hitbox.x + hitbox.width), (int) (hitbox.y + hitbox.height));
+		Point upperLeft = new Point((int) hitbox.x / TILES_DEFAULT_SIZE, (int) hitbox.y / TILES_DEFAULT_SIZE);
+		Point upperRight = new Point((int) (hitbox.x + hitbox.width) / TILES_DEFAULT_SIZE, (int) hitbox.y / TILES_DEFAULT_SIZE);
+		Point halfLeft = new Point((int) hitbox.x / TILES_DEFAULT_SIZE, (int) (hitbox.y + (hitbox.height / 2)) / TILES_DEFAULT_SIZE);
+		Point halfRight = new Point((int) (hitbox.x + hitbox.width) / TILES_DEFAULT_SIZE, (int) (hitbox.y + (hitbox.height / 2)) / TILES_DEFAULT_SIZE);
+		Point lowerLeft = new Point((int) hitbox.x / TILES_DEFAULT_SIZE, (int) (hitbox.y + hitbox.height) / TILES_DEFAULT_SIZE);
+		Point lowerRight = new Point((int) (hitbox.x + hitbox.width) / TILES_DEFAULT_SIZE, (int) (hitbox.y + hitbox.height) / TILES_DEFAULT_SIZE);
 
 		Set<Tile> currentTiles = new HashSet<Tile>();
-		currentTiles.add(lvlData[(int) upperLeft.y / TILES_DEFAULT_SIZE][(int) upperLeft.x / TILES_DEFAULT_SIZE]);
-		currentTiles.add(lvlData[(int) upperRight.y / TILES_DEFAULT_SIZE][(int) upperRight.x / TILES_DEFAULT_SIZE]);
-		currentTiles.add(lvlData[(int) halfLeft.y / TILES_DEFAULT_SIZE][(int) halfLeft.x / TILES_DEFAULT_SIZE]);
-		currentTiles.add(lvlData[(int) halfRight.y / TILES_DEFAULT_SIZE][(int) halfRight.x / TILES_DEFAULT_SIZE]);
-		currentTiles.add(lvlData[(int) lowerLeft.y / TILES_DEFAULT_SIZE][(int) lowerLeft.x / TILES_DEFAULT_SIZE]);
-		currentTiles.add(lvlData[(int) lowerRight.y / TILES_DEFAULT_SIZE][(int) lowerRight.x / TILES_DEFAULT_SIZE]);
+		try {
+			currentTiles.add(lvlData[(int) upperLeft.y][(int) upperLeft.x]);
+			currentTiles.add(lvlData[(int) upperRight.y][(int) upperRight.x]);
+			currentTiles.add(lvlData[(int) halfLeft.y][(int) halfLeft.x]);
+			currentTiles.add(lvlData[(int) halfRight.y][(int) halfRight.x]);
+			currentTiles.add(lvlData[(int) lowerLeft.y][(int) lowerLeft.x]);
+			currentTiles.add(lvlData[(int) lowerRight.y][(int) lowerRight.x]);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			return false;
+		}
 
 		switch (direction) {
 		case LEFT:

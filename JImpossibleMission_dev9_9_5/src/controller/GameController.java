@@ -1,6 +1,5 @@
 package controller;
 
-import model.Player;
 import view.MainGamePanel;
 import model.Directions;
 import model.Elevator;
@@ -9,14 +8,11 @@ import model.FurnitureTile;
 import model.GameModel;
 import model.GameSession;
 import model.GameState;
-import model.Level;
 import model.LiftTile;
 import model.PcTile;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
-import javax.swing.JComponent;
-import model.PlayerState;
 import model.Tile;
 import model.UserProfile;
 

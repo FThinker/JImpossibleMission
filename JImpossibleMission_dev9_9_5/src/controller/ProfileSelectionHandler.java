@@ -4,6 +4,8 @@ import model.GameModel;
 import model.GameState;
 import model.UserProfile;
 import javax.swing.JOptionPane;
+
+import static model.GameConstants.GAME_WIDTH;
 import static model.GameConstants.SCALE;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
@@ -24,7 +26,7 @@ public class ProfileSelectionHandler extends Observable {
     private List<UserProfile> profiles;
     private int selectedIndex = 0;
 
-    private Rectangle createButtonBounds = new Rectangle((int)(195 * SCALE), (int)(300 * SCALE), (int)(250 * SCALE), (int)(25 * SCALE));
+    private Rectangle createButtonBounds = new Rectangle(GAME_WIDTH / 2 - (int)(125 * SCALE), (int)(300 * SCALE), (int)(250 * SCALE), (int)(25 * SCALE));
     private boolean createHover = false;
     
     private List<Rectangle> deleteButtonBounds = new java.util.ArrayList<>();
